@@ -5,16 +5,21 @@ export interface ChartAxesProps {
 	// props
 	tabId: number;
 	tileId: number;
-
+	screenFrom: string;
+	tabTileProps: TabTileStateProps;
 	// state
 	token: string;
 	chartProp: any;
+	chartGroup: any;
+	dashBoardGroup: any;
 	changeLocation: any;
 
 	// dispatch
 	updateChartData: (propKey: string, chartData: any) => void;
 	toggleAxesEdit: (propKey: string) => void;
 	reUseOldData: (propKey: string) => void;
+	chartFilterGroupEdited: (isEdited: boolean) => void;
+	dashBoardFilterGroupsEdited: (isEdited: boolean) => void;
 }
 interface TimeGrain {
 	name: string;
@@ -107,7 +112,7 @@ export interface DropZoneProps {
 	updateDropZoneItems: (propKey: string, bIndex: number, item: any, allowedNumbers: any) => void;
 
 	moveItemChartProp: (
-		propKey: number | string,
+		propKey: string,
 		fromBIndex: any,
 		fromUID: any,
 		item: any,
@@ -157,16 +162,26 @@ export interface Card {
 	// state
 	tabTileProps: TabTileStateProps;
 	chartProp: ChartPropertiesProps;
+	dynamicMeasureState: any;
 }
 
 export interface CardProps extends Card {
 	// dispatch
 	deleteDropZoneItems: (propKey: string, binIndex: number, itemIndex: number) => void;
-
 	updateQueryParam: (propKey: string, binIndex: number, itemIndex: number, item: any) => void;
-
 	sortAxes: (propKey: string, bIndex: number, dragUId: any, uId: any) => void;
 	revertAxes: (propKey: string, bIndex: number, uId: any, originalIndex: number) => void;
+
+	//dynamicMeasure dispatch
+	deleteDropZoneItemsForDm: (propKey: string, binIndex: number, itemIndex: number) => void;
+	updateAxesQueryParamForDm: (
+		propKey: string,
+		binIndex: number,
+		itemIndex: number,
+		item: any
+	) => void;
+	sortAxesForDm: (propKey: string, bIndex: number, dragUId: any, uId: any) => void;
+	revertAxesForDm: (propKey: string, bIndex: number, uId: any, originalIndex: number) => void;
 }
 
 export interface AxesValuProps {

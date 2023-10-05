@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,13 +14,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+// import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import org.silzila.app.AppApplication;
+import org.silzila.app.dto.BigqueryConnectionDTO;
 import org.silzila.app.exception.BadRequestException;
 import org.silzila.app.exception.RecordNotFoundException;
 import org.silzila.app.helper.ResultSetToJson;
@@ -32,14 +38,16 @@ import org.silzila.app.payload.response.MetadataTable;
 @Service
 public class ConnectionPoolService {
 
-    private HikariDataSource dataSource = null;
+    private static final Logger logger = LogManager.getLogger(AppApplication.class);
+
+    HikariDataSource dataSource = null;
     HikariConfig config = new HikariConfig();
 
     Connection connection = null;
     Statement statement = null;
     ResultSet resultSet = null;
 
-    private static Map<String, Connection> connectionPool = new HashMap<>();
+    private static Map<String, HikariDataSource> connectionPool = new HashMap<>();
     private static Map<String, DBConnection> connectionDetails = new HashMap<>();
 
     @Autowired
@@ -60,12 +68,30 @@ public class ConnectionPoolService {
 
     // creates connection pool if not created already for a connection
     public void createConnectionPool(String id, String userId) throws RecordNotFoundException, SQLException {
+        HikariDataSource dataSource = null;
+        HikariConfig config = new HikariConfig();
+
         if (!connectionPool.containsKey(id)) {
             DBConnection dbConnection = dbConnectionService.getDBConnectionWithPasswordById(id, userId);
             String fullUrl = "";
 
+            // BigQuery - token file path to be sent in URL
+            if (dbConnection.getVendor().equals("bigquery")) {
+                fullUrl = "jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;OAuthType=0" +
+                        ";ProjectId=" + dbConnection.getProjectId() +
+                        ";OAuthServiceAcctEmail=" + dbConnection.getClientEmail() +
+                        ";OAuthPvtKeyPath=" + System.getProperty("user.home") + "/silzila-uploads/tokens/" +
+                        dbConnection.getFileName() +
+                        ";";
+                dataSource = new HikariDataSource();
+                dataSource.setMinimumIdle(1);
+                dataSource.setMaximumPoolSize(3);
+                dataSource.setDataSourceClassName("com.simba.googlebigquery.jdbc.DataSource");
+                dataSource.addDataSourceProperty("url", fullUrl);
+            }
+
             // SQL Server is handled differently
-            if (dbConnection.getVendor().equals("sqlserver")) {
+            else if (dbConnection.getVendor().equals("sqlserver")) {
                 fullUrl = "jdbc:sqlserver://" + dbConnection.getServer() + ":" + dbConnection.getPort()
                         + ";databaseName=" + dbConnection.getDatabase() + ";user=" + dbConnection.getUsername()
                         + ";password=" + dbConnection.getPasswordHash() + ";encrypt=true;trustServerCertificate=true;";
@@ -76,6 +102,18 @@ public class ConnectionPoolService {
                 dataSource.setDataSourceClassName("com.microsoft.sqlserver.jdbc.SQLServerDataSource");
                 dataSource.addDataSourceProperty("url", fullUrl);
             }
+            // for Databricks
+            else if(dbConnection.getVendor().equals("databricks")){
+                fullUrl = "jdbc:databricks://" + dbConnection.getServer() + ":" 
+                         + dbConnection.getPort() + "/" + dbConnection.getDatabase() + ";transportMode=http;ssl=1;httpPath=" +
+                         dbConnection.getHttpPath() + ";AuthMech=3;UID=token;PWD=" + dbConnection.getPasswordHash() + ";EnableArrow=0";
+                config.setJdbcUrl(fullUrl);
+                config.setDriverClassName("com.databricks.client.jdbc.Driver");
+                config.addDataSourceProperty("minimulIdle", "1");
+                config.addDataSourceProperty("maximumPoolSize", "2");
+                dataSource = new HikariDataSource(config);
+            }
+
             // for Postgres & MySQL
             else {
                 // dbConnection.getPasswordHash() now holds decrypted password
@@ -86,10 +124,12 @@ public class ConnectionPoolService {
                 config.setPassword(dbConnection.getPasswordHash());
                 config.addDataSourceProperty("minimulIdle", "1");
                 config.addDataSourceProperty("maximumPoolSize", "3");
+                config.setConnectionTimeout(300000);
+                config.setIdleTimeout(120000);
                 dataSource = new HikariDataSource(config);
             }
-            connection = dataSource.getConnection();
-            connectionPool.put(id, connection);
+            // connection = dataSource.getConnection();
+            connectionPool.put(id, dataSource);
             connectionDetails.put(id, dbConnection);
         }
     }
@@ -97,7 +137,7 @@ public class ConnectionPoolService {
     // STUB - not needed
     public JSONArray checkSqlServer() throws SQLException, RecordNotFoundException {
         String connectionUrl = "jdbc:sqlserver://3.7.39.222:1433;databaseName=landmark;user=balu;password=Marina!1234;encrypt=false";
-        System.out.println("Connection String ==========" + connectionUrl);
+        logger.info("Connection String ==========" + connectionUrl);
         try {
             Connection con = DriverManager.getConnection(connectionUrl);
             Statement statement = con.createStatement();
@@ -116,7 +156,7 @@ public class ConnectionPoolService {
             while (resultSet.next()) {
                 MetadataDatabase metadataDatabase = new MetadataDatabase();
                 metadataDatabase.setDatabase(resultSet.getString("TABLE_CAT"));
-                System.out.println("Schema loop ======== " + resultSet.getString("TABLE_CAT"));
+                logger.info("Schema loop ======== " + resultSet.getString("TABLE_CAT"));
             }
             /* SCHEMA NAMES */
             ResultSet resultSet2 = databaseMetaData.getSchemas();
@@ -124,7 +164,7 @@ public class ConnectionPoolService {
             while (resultSet2.next()) {
                 String databaseName = resultSet2.getString("TABLE_CATALOG");
                 String schemaName = resultSet2.getString("TABLE_SCHEM");
-                System.out.println("DB NAME ======== " + databaseName + " SCHEMA NAME ======= " + schemaName);
+                logger.info("DB NAME ======== " + databaseName + " SCHEMA NAME ======= " + schemaName);
             }
             con.close();
             // System.out.println("Stringigy JSON ===========\n " + jsonArray.toString());
@@ -138,16 +178,17 @@ public class ConnectionPoolService {
     // generates SQL and runs in DB and gives response based on
     // user drag & drop columns
     public JSONArray runQuery(String id, String userId, String query) throws RecordNotFoundException, SQLException {
-        try {
-            Connection _connection = connectionPool.get(id);
-            statement = _connection.createStatement();
-            resultSet = statement.executeQuery(query);
-            JSONArray jsonArray = ResultSetToJson.convertToJson(resultSet);
-            statement.close();
+        try (Connection _connection = connectionPool.get(id).getConnection();
+                PreparedStatement pst = _connection.prepareStatement(query);
+                ResultSet rs = pst.executeQuery();) {
+            // statement = _connection.createStatement();
+            // resultSet = statement.executeQuery(query);
+            JSONArray jsonArray = ResultSetToJson.convertToJson(rs);
+            // statement.close();
             return jsonArray;
         } catch (Exception e) {
-            System.out.println("runQuery Exception ----------------");
-            System.out.println("error: " + e.toString());
+            logger.warn("runQuery Exception ----------------");
+            logger.warn("error: " + e.toString());
             throw e;
         }
     }
@@ -159,8 +200,8 @@ public class ConnectionPoolService {
         // when connection id is not available, RecordNotFoundException will be throws
         createConnectionPool(id, userId);
         ArrayList<String> schemaList = new ArrayList<String>();
-        try {
-            Connection _connection = connectionPool.get(id);
+
+        try (Connection _connection = connectionPool.get(id).getConnection();) {
             DatabaseMetaData databaseMetaData = _connection.getMetaData();
             // get database (catalog) names from metadata object
             ResultSet resultSet = databaseMetaData.getCatalogs();
@@ -194,9 +235,6 @@ public class ConnectionPoolService {
                 if (databaseName == null || databaseName.trim().isEmpty()) {
                     throw new BadRequestException("Error: Please specify Database Name for SQL Server connection");
                 }
-                Connection _connection = connectionPool.get(id);
-
-                statement = _connection.createStatement();
                 String query = """
                         select s.name as schema_name
                         from %s.sys.schemas s
@@ -204,44 +242,62 @@ public class ConnectionPoolService {
                         on u.uid = s.principal_id
                         where u.issqluser = 1
                         and u.name not in ('sys', 'guest', 'INFORMATION_SCHEMA')""".formatted(databaseName);
-                resultSet = statement.executeQuery(query);
-                JSONArray jsonArray = ResultSetToJson.convertToJson(resultSet);
-                statement.close();
-                // get list of schema names from result
-                schemaList = new ArrayList<>();
-                if (jsonArray != null) {
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject rec = jsonArray.getJSONObject(i);
-                        // schema_name is the key in the JSON Object
-                        String schema = rec.getString("schema_name");
-                        schemaList.add(schema);
+                try (Connection _connection = connectionPool.get(id).getConnection();
+                        PreparedStatement pst = _connection.prepareStatement(query);
+                        ResultSet rs = pst.executeQuery();) {
+                    JSONArray jsonArray = ResultSetToJson.convertToJson(rs);
+                    // get list of schema names from result
+                    schemaList = new ArrayList<>();
+                    if (jsonArray != null) {
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            JSONObject rec = jsonArray.getJSONObject(i);
+                            // schema_name is the key in the JSON Object
+                            String schema = rec.getString("schema_name");
+                            schemaList.add(schema);
+                        }
                     }
+                    return schemaList;
                 }
+            }
+            // Databricks
+            else if (vendorName.equals("databricks")) {
+                 if (databaseName == null || databaseName.trim().isEmpty()) {
+                    throw new BadRequestException("Error: Please specify Database Name for Databricks connection");
+                }
+                try( Connection _connection = connectionPool.get(id).getConnection();){
+                 DatabaseMetaData databaseMetaData = _connection.getMetaData();
+                //  get list of schema names from result
+                 ResultSet resultSet = databaseMetaData.getSchemas(databaseName, null);
+		         while (resultSet.next()) {
+		         String schemaName = resultSet.getString("TABLE_SCHEM");
+			     schemaList.add(schemaName);
+		        }
                 return schemaList;
-
+                }
             }
             // for Postgres & MySQL
             else {
-                Connection _connection = connectionPool.get(id);
-                DatabaseMetaData databaseMetaData = _connection.getMetaData();
+                try (Connection _connection = connectionPool.get(id).getConnection();) {
 
-                // get database & schema names from metadata object
-                // Postgres will not show other databases in the server and MySQL doesn't have
-                // Schema. So, either DB or schema will be populated for Postgres and MySQL
-                // and shemas and can query cross DB
-                ResultSet resultSet = databaseMetaData.getSchemas();
-                // iterate result and add row to object and append object to list
-                while (resultSet.next()) {
-                    // TABLE_CATALOG is the DB name and we don't need
-                    // String dbName = resultSet.getString("TABLE_CATALOG");
-                    String schemaName = resultSet.getString("TABLE_SCHEM");
-                    schemaList.add(schemaName);
+                    DatabaseMetaData databaseMetaData = _connection.getMetaData();
+
+                    // get database & schema names from metadata object
+                    // Postgres will not show other databases in the server and MySQL doesn't have
+                    // Schema. So, either DB or schema will be populated for Postgres and MySQL
+                    // and shemas and can query cross DB
+                    ResultSet resultSet = databaseMetaData.getSchemas();
+                    // iterate result and add row to object and append object to list
+                    while (resultSet.next()) {
+                        // TABLE_CATALOG is the DB name and we don't need
+                        // String dbName = resultSet.getString("TABLE_CATALOG");
+                        String schemaName = resultSet.getString("TABLE_SCHEM");
+                        schemaList.add(schemaName);
+                    }
+                    return schemaList;
                 }
-                return schemaList;
-            }
-        } catch (
 
-        Exception e) {
+            }
+        } catch (Exception e) {
             throw e;
         }
     }
@@ -252,8 +308,7 @@ public class ConnectionPoolService {
         // first create connection pool to query DB
         String vendorName = getVendorNameFromConnectionPool(id, userId);
 
-        try {
-            Connection _connection = connectionPool.get(id);
+        try (Connection _connection = connectionPool.get(id).getConnection();) {
             DatabaseMetaData databaseMetaData = _connection.getMetaData();
             // this object will hold list of tables and list of views
             MetadataTable metadataTable = new MetadataTable();
@@ -289,12 +344,38 @@ public class ConnectionPoolService {
                 resultSetTables.close();
 
             }
+            // for Databricks
+            else if(vendorName.equalsIgnoreCase("databricks")){
+                // throw error if db name or schema name is not passed
+                if(databaseName == null || databaseName.trim().isEmpty() || schemaName == null 
+                       || schemaName.trim().isEmpty()){
+                    throw new BadRequestException("Error: Database & Schema names are not provided!");
+                }
+                // Add Tables
+                 resultSetTables = databaseMetaData.getTables(databaseName, schemaName, null, new String[] { "TABLE" });
+                // Add Views
+                 resultSetViews = databaseMetaData.getTables(databaseName, schemaName, null, new String[] { "VIEW" });
+		        while (resultSetTables.next()) {
+			    // fetch Tables
+			     String tableName = resultSetTables.getString("TABLE_NAME");
+			     metadataTable.getTables().add(tableName);
+                }
+                while (resultSetViews.next()){
+                // fetch Views
+                 String tableName = resultSetViews.getString("TABLE_NAME");
+                 metadataTable.getViews().add(tableName);
+                }
+                resultSetTables.close();
+                resultSetViews.close();
+
+		    }
             // postgres & MySql are handled the same but different from SQL Server
             else {
 
                 // for POSTGRESQL DB
                 // throw error if schema name is not passed
-                if (vendorName.equalsIgnoreCase("postgresql")) {
+                if (vendorName.equalsIgnoreCase("postgresql") || vendorName.equalsIgnoreCase("redshift")
+                        || vendorName.equalsIgnoreCase("bigquery")) {
                     if (schemaName == null || schemaName.trim().isEmpty()) {
                         throw new BadRequestException("Error: Schema name is not provided!");
                     }
@@ -348,14 +429,14 @@ public class ConnectionPoolService {
         // metadataColumns list will contain the final result
         ArrayList<MetadataColumn> metadataColumns = new ArrayList<MetadataColumn>();
 
-        try {
-            Connection _connection = connectionPool.get(id);
+        try (Connection _connection = connectionPool.get(id).getConnection();) {
+
             DatabaseMetaData databaseMetaData = _connection.getMetaData();
             ResultSet resultSet = null;
 
             // based on database dialect, we pass either DB name or schema name at different
             // position in the funciton for POSTGRESQL DB
-            if (vendorName.equals("postgresql")) {
+            if (vendorName.equals("postgresql") || vendorName.equals("redshift") || vendorName.equals("bigquery")) {
                 // schema name is must for postgres
                 if (schemaName == null || schemaName.trim().isEmpty()) {
                     throw new BadRequestException("Error: Schema name is not provided!");
@@ -384,6 +465,16 @@ public class ConnectionPoolService {
                 resultSet = databaseMetaData.getColumns(databaseName, schemaName, tableName, null);
 
             }
+            // for Databricks
+            else if(vendorName.equals("databricks")){
+                // DB name & schema name are must for Databricks
+               if (databaseName == null || databaseName.trim().isEmpty() || schemaName == null
+                        || schemaName.trim().isEmpty()) {
+                    throw new BadRequestException("Error: Database & Schema names are not provided!");
+                }
+                // get column names from the given schema and Table name
+                resultSet = databaseMetaData.getColumns(databaseName, schemaName, tableName, null);
+            }
             // iterate table names and add it to List
             while (resultSet.next()) {
                 String columnName = resultSet.getString("COLUMN_NAME");
@@ -411,13 +502,22 @@ public class ConnectionPoolService {
 
         // based on database dialect, we pass different SELECT * Statement
         // for POSTGRESQL DB
-        if (vendorName.equals("postgresql")) {
+        if (vendorName.equals("postgresql") || vendorName.equals("redshift")) {
             // schema name is must for postgres
             if (schemaName == null || schemaName.trim().isEmpty()) {
                 throw new BadRequestException("Error: Schema name is not provided!");
             }
             // construct query
             query = "SELECT * FROM " + schemaName + "." + tableName + " LIMIT " + recordCount;
+        }
+        // for BIGQUERY DB
+        else if (vendorName.equals("bigquery")) {
+            // schema name is must for postgres
+            if (schemaName == null || schemaName.trim().isEmpty()) {
+                throw new BadRequestException("Error: Schema name is not provided!");
+            }
+            // construct query
+            query = "SELECT * FROM `" + schemaName + "." + tableName + "` LIMIT " + recordCount;
         }
         // for MYSQL DB
         else if (vendorName.equals("mysql")) {
@@ -440,21 +540,84 @@ public class ConnectionPoolService {
             query = "SELECT TOP " + recordCount + " * FROM " + databaseName + "." + schemaName + "." + tableName;
 
         }
+        // for Databricks 
+        else if (vendorName.equals("databricks")) {
+            // DB name & schema name are must for Databricks
+            if (databaseName == null || databaseName.trim().isEmpty() || schemaName == null
+                    || schemaName.trim().isEmpty()) {
+                throw new BadRequestException("Error: Database & Schema names are not provided!");
+            }
+            // construct query
+            query = "SELECT * FROM " + databaseName + ".`" + schemaName + "`." + tableName + " LIMIT " + recordCount;
+        }
         // RUN THE 'SELECT *' QUERY
-        try {
-            Connection _connection = connectionPool.get(id);
-            statement = _connection.createStatement();
-            resultSet = statement.executeQuery(query);
-            JSONArray jsonArray = ResultSetToJson.convertToJson(resultSet);
-            statement.close();
+        try (Connection _connection = connectionPool.get(id).getConnection();
+                PreparedStatement pst = _connection.prepareStatement(query);
+                ResultSet rs = pst.executeQuery();) {
+            // Connection _connection = connectionPool.get(id).getConnection();
+            // statement = _connection.createStatement();
+            // resultSet = statement.executeQuery(query);
+            JSONArray jsonArray = ResultSetToJson.convertToJson(rs);
+            // statement.close();
             return jsonArray;
         } catch (Exception e) {
             throw e;
         }
     }
 
+    // test connect Big Query
+    public void testDBConnectionBigQuery(BigqueryConnectionDTO bigQryConnDTO)
+            throws SQLException, BadRequestException {
+        String fullUrl = "jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;OAuthType=0" +
+                ";ProjectId=" + bigQryConnDTO.getProjectId() +
+                ";OAuthServiceAcctEmail=" + bigQryConnDTO.getClientEmail() +
+                ";OAuthPvtKeyPath=" + System.getProperty("user.home") + "/silzila-uploads/tmp/"
+                + bigQryConnDTO.getTokenFileName() +
+                ";";
+        dataSource = new HikariDataSource();
+        dataSource.setMinimumIdle(1);
+        dataSource.setMaximumPoolSize(3);
+        dataSource.setDataSourceClassName("com.simba.googlebigquery.jdbc.DataSource");
+        dataSource.addDataSourceProperty("url", fullUrl);
+        connection = dataSource.getConnection();
+        Integer rowCount = 0;
+        // run a simple query and see it record is fetched
+        try {
+            statement = connection.createStatement();
+            // resultSet = statement.executeQuery("select * FROM
+            // `stable-course-380911`.landmark.store;");
+            resultSet = statement.executeQuery("select 1");
+            while (resultSet.next()) {
+                // System.out.println("**********************" + resultSet.getString(1));
+                rowCount++;
+
+            }
+            // return error if no record is fetched
+            if (rowCount == 0) {
+                throw new BadRequestException("Error: Something wrong!");
+            }
+        } catch (Exception e) {
+            logger.warn("error: " + e.toString());
+            throw e;
+
+        } finally {
+            resultSet.close();
+            statement.close();
+            connection.close();
+            dataSource.close();
+        }
+    }
+
     // test connect a given database connection parameters
     public void testDBConnection(DBConnectionRequest request) throws SQLException, BadRequestException {
+
+        HikariDataSource dataSource = null;
+        HikariConfig config = new HikariConfig();
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+	    
         // SQL Server is hadled differently
         if (request.getVendor().equals("sqlserver")) {
             String fullUrl = "jdbc:sqlserver://" + request.getServer() + ":" + request.getPort()
@@ -467,7 +630,19 @@ public class ConnectionPoolService {
             dataSource.setDataSourceClassName("com.microsoft.sqlserver.jdbc.SQLServerDataSource");
             dataSource.addDataSourceProperty("url", fullUrl);
         }
-        // Postgres & MySQL
+        // Databricks
+        else if(request.getVendor().equals("databricks")){
+		 String fullUrl = "jdbc:databricks://" + request.getServer() + ":" 
+                  + request.getPort() + "/" + request.getDatabase() + ";transportMode=http;ssl=1;httpPath=" 
+                   + request.getHttpPath() + ";AuthMech=3;UID=token;PWD=" + request.getPassword() + ";EnableArrow=0";
+         logger.info(fullUrl);       
+		 config.setJdbcUrl(fullUrl);
+         config.setDriverClassName("com.databricks.client.jdbc.Driver");
+		 config.addDataSourceProperty("minimulIdle", "1");
+		 config.addDataSourceProperty("maximumPoolSize", "2");
+		 dataSource = new HikariDataSource(config);
+        }
+         // Postgres & MySQL
         else {
             String fullUrl = "jdbc:" + request.getVendor() + "://" + request.getServer() + ":" + request.getPort() + "/"
                     + request.getDatabase();
@@ -492,7 +667,7 @@ public class ConnectionPoolService {
                 throw new BadRequestException("Error: Something wrong!");
             }
         } catch (Exception e) {
-            System.out.println("error: " + e.toString());
+           logger.warn("error: " + e.toString());
             throw e;
 
         } finally {
@@ -522,16 +697,16 @@ public class ConnectionPoolService {
                     on u.uid = s.principal_id
                     where u.issqluser = 1
                     and u.name not in ('sys', 'guest', 'INFORMATION_SCHEMA')""";
-            System.out.println("------------------------------\n" + query);
+            logger.info("------------------------------\n" + query);
             resultSet = statement.executeQuery(query); // select 1 as x, 2 as y
             JSONArray jsonArray = ResultSetToJson.convertToJson(resultSet);
-            System.out.println("------------------------------\n" + jsonArray.toString());
+            logger.info("------------------------------\n" + jsonArray.toString());
             statement.close();
             return jsonArray;
 
         } catch (Exception e) {
-            System.out.println("runQuery Exception ----------------");
-            System.out.println("error: " + e.toString());
+            logger.warn("runQuery Exception ----------------");
+            logger.warn("error: " + e.toString());
             throw new SQLException();
         } finally {
             connection.close();
@@ -544,12 +719,12 @@ public class ConnectionPoolService {
     public void clearAllConnectionPoolsInShutDown() {
         connectionPool.forEach((id, conn) -> {
             try {
-                conn.close();
+                conn.getConnection().close();
             } catch (SQLException e) {
-                System.out.println("Error while closing all Connection Pools......");
+                logger.warn("Error while closing all Connection Pools......");
                 e.printStackTrace();
             }
         });
-        System.out.println("clearAllConnectionPoolsInShutDown Fn Called..................");
+        logger.warn("clearAllConnectionPoolsInShutDown Fn Called..................");
     }
 }

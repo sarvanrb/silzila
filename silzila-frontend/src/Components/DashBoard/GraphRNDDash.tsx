@@ -11,6 +11,8 @@ import DashGraph from "./DashGraph";
 import { Dispatch } from "redux";
 import { updateDashGraphPosition, updateDashGraphSize } from "../../redux/TabTile/TabActions";
 import { Rnd } from "react-rnd";
+import ChartAxes from '../ChartAxes/ChartAxes';
+
 
 const GraphRNDDash = ({
 	style,
@@ -25,6 +27,7 @@ const GraphRNDDash = ({
 
 	chartProp,
 	tabTileProps,
+	chartControls,
 }: any) => {
 	const gridSize = tabTileProps.dashGridSize;
 	const dragGridX = gridSize.x;
@@ -41,11 +44,16 @@ const GraphRNDDash = ({
 	return (
 		// Drag and resize component
 		<Rnd
-			disableDragging={tabTileProps.dashMode === "Edit" ? false : true}
+			disableDragging={
+				tabTileProps.dashMode === "Edit"
+					? chartControls.properties[boxDetails.propKey].cardControls.isDragging
+						? true
+						: false
+					: true
+			}
 			enableResizing={tabTileProps.dashMode === "Edit" ? true : false}
 			onMouseEnter={() => {
 				if (tabTileProps.dashMode === "Edit") {
-					// console.log("Mouse Entered in GraphRNDDash component");
 					setHovering(true);
 				}
 			}}
@@ -61,14 +69,12 @@ const GraphRNDDash = ({
 			size={{ width: boxDetails.width * gridSize.x, height: boxDetails.height * gridSize.y }}
 			position={{ x: boxDetails.x * gridSize.x, y: boxDetails.y * gridSize.y }}
 			onDragStart={(e: any, d: any) => {
-				// console.log(d);
 			}}
 			onDrag={(e: any, d: any) => {
-				// console.log(d);
 				setStyle({ ...style, border: "1px solid gray" });
 			}}
 			onDragStop={(e: any, d: any) => {
-				console.log(d.lastY);
+				
 				updateDashGraphPos(
 					tabId,
 					boxDetails.propKey,
@@ -115,27 +121,60 @@ const GraphRNDDash = ({
 			dragHandleClassName="dragHeader"
 		>
 			{/* <div className="rndObject" propKey={boxDetails.propKey}> */}
-			<div className="rndObject">
-				<div
-					className="dragHeader"
-					style={
-						tabTileProps.dashMode === "Present"
-							? { cursor: "default" }
-							: { cursor: "move" }
-					}
-					// propKey={boxDetails.propKey}
-				>
-					{chartProp.properties[boxDetails.propKey].titleOptions.chartTitle}
-				</div>
 
-				<div
-					className="dashChart"
-					id="dashChart"
-					// propKey={boxDetails.propKey}
-				>
-					<DashGraph propKey={boxDetails.propKey} tabId={tabId} gridSize={gridSize} />
+			{chartProp.properties[boxDetails.propKey].chartType === "simplecard" ? (
+				<div className="rndObject">
+					<div
+						className="dragHeader"
+						style={{
+							cursor: "move",
+							border: "none",
+							fontWeight: "unset",
+							color: "unset",
+							fontFamily: "unset",
+							height: "100%",
+							width: "100%",
+							whiteSpace: "nowrap",
+							overflow: "hidden",
+							textOverflow: "ellipsis",
+						}}
+					>
+						<div
+							className="dashChart"
+							id="dashChart"
+							// propKey={boxDetails.propKey}
+						>
+							<DashGraph
+								propKey={boxDetails.propKey}
+								tabId={tabId}
+								gridSize={gridSize}
+							/>
+						</div>
+					</div>
 				</div>
-			</div>
+			) : (
+				<div className="rndObject">
+					<div
+						className="dragHeader"
+						style={
+							tabTileProps.dashMode === "Present"
+								? { cursor: "default" }
+								: { cursor: "move" }
+						}
+						// propKey={boxDetails.propKey}
+					>
+						{chartProp.properties[boxDetails.propKey].titleOptions.chartTitle}
+					</div>
+
+					<div
+						className="dashChart"
+						id="dashChart"
+						// propKey={boxDetails.propKey}
+					>
+						<DashGraph propKey={boxDetails.propKey} tabId={tabId} gridSize={gridSize} />
+					</div>
+				</div>
+			)}
 		</Rnd>
 	);
 };
@@ -144,6 +183,7 @@ const mapStateToProps = (state: any) => {
 	return {
 		tabTileProps: state.tabTileProps,
 		chartProp: state.chartProperties,
+		chartControls: state.chartControls,
 	};
 };
 

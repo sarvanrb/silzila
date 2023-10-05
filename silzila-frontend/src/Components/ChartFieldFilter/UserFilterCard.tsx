@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import "../ChartAxes/Card.css";
 import "./UserFilterCard.css";
 import { useDrag, useDrop } from "react-dnd";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import { connect } from "react-redux";
 import { Checkbox, Divider, Menu, MenuItem, Select, Tooltip, Typography } from "@mui/material";
 
@@ -22,28 +21,17 @@ import LoadingPopover from "../CommonFunctions/PopOverComponents/LoadingPopover"
 import FetchData from "../ServerCall/FetchData";
 import moment from "moment";
 
-import expandIcon from "../../assets/expand.png";
-import collapseIcon from "../../assets/collapse.png";
-import tickIcon from "../../assets/tick.png";
-import { StyledSlider } from "./StyledSlider.js";
-import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
-import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import DoneIcon from "@mui/icons-material/Done";
-import Close from "@mui/icons-material/Close";
-import { fi } from "date-fns/locale";
+
 // import { UnCheckedIcon } from "material-ui/svg-icons/toggle/check-box-outline-blank";
 // import { CheckedIcon } from "material-ui/svg-icons/toggle/check-box";
 
 import { PatternCollectionType } from "./UserFilterCardInterface";
 import { Dispatch } from "redux";
-import {
-	ChartPropertiesProps,
-	ChartPropertiesStateProps,
-} from "../../redux/ChartPoperties/ChartPropertiesInterfaces";
+import { ChartPropertiesStateProps } from "../../redux/ChartPoperties/ChartPropertiesInterfaces";
 import { isLoggedProps } from "../../redux/UserInfo/IsLoggedInterfaces";
 import { TabTileStateProps2 } from "../../redux/TabTile/TabTilePropsInterfaces";
 import { UserFilterCardProps } from "./UserFilterCardInterface";
-import { number } from "echarts";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -68,21 +56,16 @@ const UserFilterCard = ({
 }: UserFilterCardProps) => {
 	field.dataType = field.dataType.toLowerCase();
 
-	const [indeterminate, setindeterminate] = useState<boolean>(false);
 	const { uId, fieldname, displayname, dataType, tableId } = field;
-	// console.log(field);
-	console.log(chartProp.properties[propKey].chartAxes[0]);
+	var isCollapsed: boolean = chartProp.properties[propKey].chartAxes[0].isCollapsed;
 
 	useEffect(() => {
-		// console.log("useEffect Called");
 		var res = chartProp.properties[propKey].chartAxes[0].fields.map(el => {
 			el.isCollapsed = !chartProp.properties[propKey].chartAxes[0].isCollapsed;
 			return el;
 		});
 		updtateFilterExpandeCollapse(propKey, bIndex, res);
-	}, [chartProp.properties[propKey].chartAxes[0].isCollapsed]);
-
-	// console.log(propKey, field, bIndex, itemIndex, token);
+	}, [isCollapsed]);
 
 	const originalIndex = chartProp.properties[propKey].chartAxes[bIndex].fields.findIndex(
 		item => item.uId === uId
@@ -132,7 +115,6 @@ const UserFilterCard = ({
 	];
 
 	let filterFieldData = JSON.parse(JSON.stringify(field));
-	// console.log(filterFieldData);
 
 	var includeExcludeOptions: PatternCollectionType[] = [
 		{ name: "Include", value: "Include" },
@@ -217,6 +199,7 @@ const UserFilterCard = ({
 		}
 
 		updateLeftFilterItem(propKey, 0, constructChartAxesFieldObject());
+		// eslint-disable-next-line
 	}, []);
 
 	var menuStyle = { fontSize: "12px", padding: "2px 1rem" };
@@ -301,12 +284,9 @@ const UserFilterCard = ({
 		type: "card",
 
 		end: (dropResult, monitor) => {
-			// // console.log("***************on DRAG END**************");
 			const { uId, bIndex, originalIndex } = monitor.getItem();
-			// // console.log("uId = ", uId);
 
 			const didDrop = monitor.didDrop();
-			// // console.log("didDrop = ", didDrop);
 
 			if (!didDrop) {
 				revertAxes(propKey, bIndex, uId, originalIndex);
@@ -324,7 +304,6 @@ const UserFilterCard = ({
 		hover({ uId: dragUId, bIndex: fromBIndex }: any) {
 			if (fromBIndex === bIndex && dragUId !== uId) {
 				sortAxes(propKey, bIndex, dragUId, uId);
-				// console.log("============HOVER BLOCK END ==============");
 			}
 		},
 	});
@@ -373,15 +352,9 @@ const UserFilterCard = ({
 		updateLeftFilterItem(propKey, 0, constructChartAxesFieldObject());
 	};
 
-	// const getStatus = () => {
-	// 	setindeterminate(true);
-	// 	return false;
-	// };
-
 	///Render Pick list card from raw select members
 	const SelecPickListCard = () => {
 		let _selectionMembers = null;
-		// console.log(filterFieldData);
 
 		if (filterFieldData && filterFieldData.rawselectmembers) {
 			_selectionMembers = filterFieldData.rawselectmembers.map((item: any, index: number) => {
@@ -416,7 +389,7 @@ const UserFilterCard = ({
 								sx={{
 									color: "red",
 									"&.Mui-checked": {
-										color: "#1976d2",
+										color: "#a6a6a6",
 									},
 								}}
 								onChange={e => handleCBChange(e)}
@@ -483,12 +456,10 @@ const UserFilterCard = ({
 
 	///Menu close event handler
 	const handleClose = async (closeFrom: any, queryParam?: any) => {
-		// console.log(closeFrom, queryParam);
 		setAnchorEl(null);
 		//setShowOptions(false);
 
 		if (closeFrom === "opt2") {
-			// console.log(filterFieldData.rawselectmembers, filterFieldData.fieldtypeoption);
 			if (
 				!filterFieldData.rawselectmembers ||
 				filterFieldData.fieldtypeoption !== queryParam
@@ -697,7 +668,6 @@ const UserFilterCard = ({
 	};
 
 	const handleExpandCollapse = (e: any) => {
-		console.log(e.uId);
 		// filterFieldData.isCollapsed = e;
 	};
 
@@ -777,7 +747,6 @@ const UserFilterCard = ({
 
 	///Render Search Condition Custom Input Control
 	const SearchConditionCustomInputControl = ({ type }: any) => {
-		// // console.log(type);
 		return (
 			<>
 				<TextField
@@ -1155,13 +1124,12 @@ const UserFilterCard = ({
 
 	///Construct Chart property object
 	const constructChartAxesFieldObject = () => {
-		console.log(filterFieldData);
 		return filterFieldData;
 	};
 
 	return (
 		<div
-			ref={node => drag(drop(node))}
+			ref={(node: any) => drag(drop(node))}
 			className="UserFilterCard"
 			style={
 				filterFieldData.isInValidData
@@ -1268,9 +1236,9 @@ const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 	return {
 		updateLeftFilterItem: (propKey: string, bIndex: number, item: any) =>
 			dispatch(updateLeftFilterItem(propKey, bIndex, item)),
-		updtateFilterExpandeCollapse: (propKey: number | string, bIndex: number, item: any) =>
+		updtateFilterExpandeCollapse: (propKey: string, bIndex: number, item: any) =>
 			dispatch(updtateFilterExpandeCollapse(propKey, bIndex, item)),
-		deleteDropZoneItems: (propKey: number | string, binIndex: number, itemIndex: any) =>
+		deleteDropZoneItems: (propKey: string, binIndex: number, itemIndex: any) =>
 			dispatch(editChartPropItem("delete", { propKey, binIndex, itemIndex })),
 
 		sortAxes: (propKey: string, bIndex: number, dragUId: any, uId: any) =>

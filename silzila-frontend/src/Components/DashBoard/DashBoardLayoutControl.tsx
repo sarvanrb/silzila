@@ -5,6 +5,7 @@ import {
 	Radio,
 	RadioGroup,
 	TextField,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import React, { useState } from "react";
@@ -25,8 +26,12 @@ import {
 	setDashLayoutSelectedOptionForFixed,
 } from "../../redux/TabTile/TabActions";
 import { DashBoardLayoutProps } from "./DashBoardLayoutControlInterfaces";
+import CloseIcon from "@mui/icons-material/Close";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
 const DashBoardLayoutControl = ({
+	// props
+	setDashboardResizeColumn,
 	//state
 	tabTileProps,
 	tabState,
@@ -48,14 +53,12 @@ const DashBoardLayoutControl = ({
 	const [isCoustomSelected, setIsCustomSelected] = useState<boolean>(false);
 	const [isCoustomRangeSelected, setIsCustomRangeSelected] = useState<boolean>(false);
 
-	// console.log(tabTileProps.selectedTabId);
 	const tabId = tabTileProps.selectedTabId;
 	const fixedOption = tabState.tabs[tabId].dashLayout.selectedOptionForFixed;
 	const autoOption = tabState.tabs[tabId].dashLayout.selectedOptionForAuto;
 	let customHeight = tabState.tabs[tabId].dashLayout.custom.height;
 	let customWidth = tabState.tabs[tabId].dashLayout.custom.width;
 
-	// console.log(tabState.tabs[tabId].dashLayout.dashboardLayout);
 	const textFieldInputProps = {
 		style: {
 			height: "2rem",
@@ -307,7 +310,19 @@ const DashBoardLayoutControl = ({
 
 	return (
 		<div className="dashboardLayoutControl">
-			<div className="axisTitle">Dashboard Size</div>
+			<div className="axisTitle">
+				Dashboard Size
+				<Tooltip title="Hide">
+					<KeyboardArrowUpIcon
+						sx={{
+							fontSize: "16px",
+							float: "right",
+							marginRight: "-4px",
+						}}
+						onClick={() => setDashboardResizeColumn(false)}
+					/>
+				</Tooltip>
+			</div>
 			{/* {dashSizeOptionBtn()} */}
 			{whenPageSizeisAuto()}
 

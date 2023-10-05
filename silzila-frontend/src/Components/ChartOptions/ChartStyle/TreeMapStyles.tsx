@@ -16,11 +16,9 @@ const TreeMapStyles = ({
 	// dispatch
 	updateTreeMapStyleOptions,
 }: ChartOptionsProps & {
-	updateTreeMapStyleOptions: (propKey: string | number, option: string, value: any) => void;
+	updateTreeMapStyleOptions: (propKey: string, option: string, value: any) => void;
 }) => {
-	var propKey: number = parseFloat(
-		`${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`
-	);
+	var propKey: string = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
 	const treemapStyle = chartControls.properties[propKey].treeMapChartControls;
 	let chartData = chartControls.properties[propKey].chartData
 		? chartControls.properties[propKey].chartData
@@ -42,7 +40,6 @@ const TreeMapStyles = ({
 			return { name: el.fieldname, value: i + 1 };
 		}
 	);
-	console.log(treeMapLeafDepthOptions);
 
 	return (
 		<div className="optionsInfo">
@@ -108,7 +105,7 @@ const mapStateToProps = (state: ChartOptionsStateProps, ownProps: any) => {
 
 const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 	return {
-		updateTreeMapStyleOptions: (propKey: number | string, option: string, value: any) =>
+		updateTreeMapStyleOptions: (propKey: string, option: string, value: any) =>
 			dispatch(updateTreeMapStyleOptions(propKey, option, value)),
 	};
 };

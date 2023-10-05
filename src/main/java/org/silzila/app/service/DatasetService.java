@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.h2.bnf.context.DbColumn;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
-import org.json.JSONObject;
+import org.silzila.app.AppApplication;
 import org.silzila.app.dto.DatasetDTO;
 import org.silzila.app.dto.DatasetNoSchemaDTO;
 import org.silzila.app.exception.BadRequestException;
@@ -22,15 +22,12 @@ import org.silzila.app.payload.request.DataSchema;
 import org.silzila.app.payload.request.DatasetRequest;
 import org.silzila.app.payload.request.Query;
 import org.silzila.app.payload.request.Table;
-import org.silzila.app.payload.response.MessageResponse;
 import org.silzila.app.querybuilder.QueryComposer;
 import org.silzila.app.querybuilder.filteroptions.FilterOptionsQueryComposer;
 import org.silzila.app.repository.DatasetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -40,6 +37,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class DatasetService {
+
+    private static final Logger logger = LogManager.getLogger(DatasetService.class);
 
     private static Map<String, DatasetDTO> datasetDetails = new HashMap<>();
 
@@ -59,7 +58,7 @@ public class DatasetService {
     FileDataService fileDataService;
 
     @Autowired
-    SparkService sparkService;
+    DuckDbService duckDbService;
 
     ObjectMapper objectMapper = new ObjectMapper();
 
@@ -267,14 +266,14 @@ public class DatasetService {
     public String runQuery(String userId, String dBConnectionId, String datasetId, Boolean isSqlOnly,
             Query req)
             throws RecordNotFoundException, SQLException, JsonMappingException, JsonProcessingException,
-            BadRequestException {
+            BadRequestException, ClassNotFoundException {
         // need at least one dim or measure or field for query execution
         if (req.getDimensions().isEmpty() && req.getMeasures().isEmpty() && req.getFields().isEmpty()) {
 
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Error: At least one Dimension/Measure/Field should be there!");
         }
-        // get dataset details to compose query
+        // get dataset details in buffer
         DatasetDTO ds = loadDatasetInBuffer(datasetId, userId);
         // System.out.println("*****************" + ds.toString());
 
@@ -297,7 +296,7 @@ public class DatasetService {
         if (ds.getIsFlatFileData() == false) {
 
             String query = queryComposer.composeQuery(req, ds, vendorName);
-            System.out.println("\n******* QUERY **********\n" + query);
+            logger.info("\n******* QUERY **********\n" + query);
             // when the request is just Raw SQL query Text
             if (isSqlOnly != null && isSqlOnly) {
                 return query;
@@ -337,23 +336,27 @@ public class DatasetService {
                     .filter(table -> uniqueTableIds.contains(table.getId()))
                     .collect(Collectors.toList());
 
+            logger.info("unique table id =======\n" + uniqueTableIds.toString() +
+                    "\n\tableObjectList ======== \n" + tableObjList.toString());
             // throw error when any requested table id is not in dataset
             if (uniqueTableIds.size() != tableObjList.size()) {
                 throw new BadRequestException("Error: some table id is not present in Dataset!");
             }
 
-            // get files names from file ids and load the files as DF
+            // get files names from file ids and load the files as Views
             fileDataService.getFileNameFromFileId(userId, tableObjList);
-            String query = queryComposer.composeQuery(req, ds, "spark");
-            System.out.println("\n******* QUERY **********\n" + query);
+            String query = queryComposer.composeQuery(req, ds, "duckdb");
+            logger.info("\n******* QUERY **********\n" + query);
+
             // when the request is just Raw SQL query Text
             if (isSqlOnly != null && isSqlOnly) {
                 return query;
             }
             // when the request is for query result
             else {
-                List<JsonNode> jsonNodes = sparkService.runQuery(query);
-                return jsonNodes.toString();
+                // List<JsonNode> jsonNodes = sparkService.runQuery(query);
+                JSONArray jsonArray = duckDbService.runQuery(query);
+                return jsonArray.toString();
             }
         }
 
@@ -362,7 +365,7 @@ public class DatasetService {
     // Populate filter Options
     public Object filterOptions(String userId, String dBConnectionId, String datasetId, ColumnFilter columnFilter)
             throws RecordNotFoundException, SQLException, JsonMappingException, JsonProcessingException,
-            BadRequestException {
+            BadRequestException, ClassNotFoundException {
 
         String vendorName = "";
         DatasetDTO ds = loadDatasetInBuffer(datasetId, userId);
@@ -379,7 +382,7 @@ public class DatasetService {
             vendorName = connectionPoolService.getVendorNameFromConnectionPool(dBConnectionId, userId);
             // System.out.println("Dialect *****************" + vendorName);
             String query = filterOptionsQueryComposer.composeQuery(columnFilter, ds, vendorName);
-            System.out.println("\n******* QUERY **********\n" + query);
+            logger.info("\n******* QUERY **********\n" + query);
             JSONArray jsonArray = connectionPoolService.runQuery(dBConnectionId, userId, query);
             return jsonArray;
         }
@@ -400,13 +403,15 @@ public class DatasetService {
                 throw new BadRequestException("Error: table id is not present in Dataset!");
             }
 
-            // get files names from file ids and load the files as DF
+            // get files names from file ids and load the files as Views
             fileDataService.getFileNameFromFileId(userId, tableObjList);
             // build query
-            String query = filterOptionsQueryComposer.composeQuery(columnFilter, ds, "spark");
-            System.out.println("\n******* QUERY **********\n" + query);
-            List<JsonNode> jsonNodes = sparkService.runQuery(query);
-            return jsonNodes;
+            String query = filterOptionsQueryComposer.composeQuery(columnFilter, ds, "duckdb");
+            logger.info("\n******* QUERY **********\n" + query);
+            // List<JsonNode> jsonNodes = sparkService.runQuery(query);
+            // return jsonNodes;
+            JSONArray jsonArray = duckDbService.runQuery(query);
+            return jsonArray.toString();
         }
 
     }

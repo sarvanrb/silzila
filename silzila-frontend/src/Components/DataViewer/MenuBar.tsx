@@ -19,8 +19,6 @@ import LaunchRoundedIcon from "@mui/icons-material/LaunchRounded";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import PrivacyTipOutlinedIcon from "@mui/icons-material/PrivacyTipOutlined";
-import EditIcon from "../../assets/edit.png";
-import ScreenPresentIcon from "../../assets/slideshow.png";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
 	githubAddress,
@@ -29,7 +27,6 @@ import {
 } from "../ServerCall/EnvironmentVariables";
 import AboutPopover from "../CommonFunctions/PopOverComponents/AboutPopover";
 import PrivacyPopover from "../CommonFunctions/PopOverComponents/PrivacyPopover";
-import SilzilaLogo from "../../assets/silzila_crop.png";
 import { Dispatch } from "redux";
 import CSS from "csstype";
 import { MapStateProps, MenubarProps } from "./MenubarInterfaces";
@@ -39,18 +36,15 @@ import "./dataViewer.css";
 import { toggleDashModeInTab } from "../../redux/TabTile/TabActions";
 import {
 	resetAllStates,
-	setSelectedControlMenu,
 	toggleDashMode,
 } from "../../redux/TabTile/TabTileActionsAndMultipleDispatches";
 import { SelectListItem } from "../CommonFunctions/SelectListItem";
 import { resetFlatFileState } from "../../redux/FlatFile/FlatFileStateActions";
 import silzilaNewLogo from "../../assets/new_silzilaLogo.svg";
-import Edit from "../../assets/edit.png";
-import Present from "../../assets/slideshow.png";
 import { AlertColor } from "@mui/material/Alert";
-import SwitchWithInput from "../ChartOptions/SwitchWithInput";
-import SlideshowIcon from "@mui/icons-material/Slideshow";
-import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
+import DownloadPagePopover from "../CommonFunctions/PopOverComponents/DownloadPagePopover";
+import { setPageSettings } from "../../redux/PageSettings/DownloadPageSettingsActions";
+
 const MenuBar = ({
 	// props
 	from,
@@ -63,6 +57,8 @@ const MenuBar = ({
 	playBookState,
 	chartProperty,
 	chartControl,
+	chartGroup,
+	dynamicMeasureState,
 
 	//dispatch
 	toggleDashMode,
@@ -71,19 +67,32 @@ const MenuBar = ({
 	resetAllStates,
 	resetUser,
 	resetFlatFileState,
+	setPageSettings,
 }: MenubarProps) => {
 	var showSaveWarning: boolean = false;
+	var _ = require("lodash");
 
 	// Check if the current state of playbook is the same as old state or not
 	if (from === "dataViewer" && playBookState.oldContent) {
 		if (
-			JSON.stringify(tabState) === JSON.stringify(playBookState.oldContent.tabState) &&
-			JSON.stringify(tileState) === JSON.stringify(playBookState.oldContent.tileState) &&
-			JSON.stringify(tabTileProps) ===
-				JSON.stringify(playBookState.oldContent.tabTileProps) &&
-			JSON.stringify(chartProperty) ===
-				JSON.stringify(playBookState.oldContent.chartProperty) &&
-			JSON.stringify(chartControl) === JSON.stringify(playBookState.oldContent.chartControl)
+			_.isEqual(tabState, playBookState.oldContent.tabState) &&
+			_.isEqual(tileState, playBookState.oldContent.tileState) &&
+			_.isEqual(tabTileProps, playBookState.oldContent.tabTileProps) &&
+			_.isEqual(chartProperty, playBookState.oldContent.chartProperty) &&
+			_.isEqual(chartControl, playBookState.oldContent.chartControl) &&
+			_.isEqual(chartGroup, playBookState.oldContent.chartGroup) &&
+			_.isEqual(dynamicMeasureState, playBookState.oldContent.dynamicMeasureState)
+			// JSON.stringify(tabState) === JSON.stringify(playBookState.oldContent.tabState) &&
+			// JSON.stringify(tileState) === JSON.stringify(playBookState.oldContent.tileState) &&
+			// JSON.stringify(tabTileProps) ===
+			// 	JSON.stringify(playBookState.oldContent.tabTileProps) && //*
+			// JSON.stringify(chartProperty) ===
+			// 	JSON.stringify(playBookState.oldContent.chartProperty) &&
+			// JSON.stringify(chartControl) ===
+			// 	JSON.stringify(playBookState.oldContent.chartControl) && //*
+			// JSON.stringify(chartGroup) === JSON.stringify(playBookState.oldContent.chartGroup) &&
+			// JSON.stringify(dynamicMeasureState) ===
+			// JSON.stringify(playBookState.oldContent.dynamicMeasureState)
 		) {
 			showSaveWarning = false;
 		} else {
@@ -134,7 +143,6 @@ const MenuBar = ({
 	//		2. Home button clicked
 	//		3. Logout clicked
 	const handleSave = async () => {
-		console.log(playBookState);
 		setOpenFileMenu(false);
 
 		// check if this playbook already has a name / id
@@ -153,7 +161,6 @@ const MenuBar = ({
 			});
 
 			if (!result.status) {
-				//console.log(result.data.detail);
 			} else {
 				setSeverity("success");
 				setOpenAlert(true);
@@ -161,7 +168,7 @@ const MenuBar = ({
 
 				updatePlayBookId(
 					result.data.name,
-					result.data.pb_uid,
+					result.data.id,
 					result.data.description,
 					result.data.content
 				);
@@ -178,6 +185,9 @@ const MenuBar = ({
 						navigate("/login");
 					}
 				}, 2000);
+
+				console.log(JSON.stringify(result.data.content["tabTileProps"], null, "\t"));
+				console.log(JSON.stringify(tabTileProps, null, "\t"));
 			}
 		} else {
 			setSaveModal(true);
@@ -195,6 +205,8 @@ const MenuBar = ({
 				tabTileProps,
 				chartProperty,
 				chartControl,
+				chartGroup,
+				dynamicMeasureState,
 			},
 		};
 
@@ -247,18 +259,18 @@ const MenuBar = ({
 				setSeverity("error");
 				setOpenAlert(true);
 				setTestMessage(result.data.detail);
-				setTimeout(() => {
-					setOpenAlert(false);
-				}, 2000);
+				// setTimeout(() => {
+				// 	setOpenAlert(false);
+				// }, 2000);
 			}
 		} else {
 			setSeverity("error");
 			setOpenAlert(true);
 			setTestMessage("Provide a Playbook name");
 
-			setTimeout(() => {
-				setOpenAlert(false);
-			}, 2000);
+			// setTimeout(() => {
+			// 	setOpenAlert(false);
+			// }, 2000);
 		}
 	};
 
@@ -269,7 +281,6 @@ const MenuBar = ({
 	// 		url: "dc/close-all-dc",
 	// 		headers: { Authorization: `Bearer ${token}` },
 	// 	});
-	// 	//console.log(result.data);
 	// };
 
 	const LogOutMenu = () => {
@@ -322,6 +333,12 @@ const MenuBar = ({
 		);
 	};
 
+	// const onDownload = () => {
+	// 	if (setCallForDownload) {
+	// 		setCallForDownload(true);
+	// 	}
+	// };
+
 	const FileMenu = () => {
 		return (
 			<Menu
@@ -359,6 +376,27 @@ const MenuBar = ({
 					}}
 				>
 					Save Playbook As
+				</MenuItem>
+
+				<MenuItem
+					sx={fileMenuStyle}
+					onClick={() => {
+						setOpenFileMenu(false);
+						setPageSettings("downloadType", "pdf");
+						setPageSettings("openPageSettingPopover", true);
+					}}
+				>
+					Download PDF
+				</MenuItem>
+				<MenuItem
+					sx={fileMenuStyle}
+					onClick={() => {
+						setOpenFileMenu(false);
+						setPageSettings("downloadType", "image");
+						setPageSettings("callForDownload", true);
+					}}
+				>
+					Download Image
 				</MenuItem>
 			</Menu>
 		);
@@ -488,6 +526,7 @@ const MenuBar = ({
 					<div
 						className="menuHomeIcon"
 						onClick={() => {
+							console.log(showSaveWarning, playBookState.playBookUid);
 							if (showSaveWarning || playBookState.playBookUid === null) {
 								setSaveFromHomeIcon(true);
 								setSaveModal(true);
@@ -616,7 +655,6 @@ const MenuBar = ({
 					!tabTileProps.showDash && from === "dataViewer" ? "accountIcon" : "menuHome"
 				}
 				onClick={e => {
-					console.log(e.currentTarget);
 					setLogoutAnchor(e.currentTarget);
 					setLogoutModal(!logoutModal);
 				}}
@@ -753,11 +791,12 @@ const MenuBar = ({
 				}}
 			/>
 			{/* render Menu */}
+			<DownloadPagePopover />
 		</div>
 	);
 };
 
-const mapStateToProps = (state: MapStateProps, ownProps: any) => {
+const mapStateToProps = (state: any, ownProps: any) => {
 	return {
 		playBookState: state.playBookState,
 		token: state.isLogged.accessToken,
@@ -766,6 +805,8 @@ const mapStateToProps = (state: MapStateProps, ownProps: any) => {
 		tileState: state.tileState,
 		chartProperty: state.chartProperties,
 		chartControl: state.chartControls,
+		chartGroup: state.chartFilterGroup,
+		dynamicMeasureState: state.dynamicMeasuresState,
 	};
 };
 
@@ -783,6 +824,7 @@ const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 		resetAllStates: () => dispatch(resetAllStates()),
 		resetUser: () => dispatch(resetUser()),
 		resetFlatFileState: () => dispatch(resetFlatFileState()),
+		setPageSettings: (option: string, value: any) => dispatch(setPageSettings(option, value)),
 	};
 };
 

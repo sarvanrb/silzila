@@ -16,7 +16,7 @@ import {
 import { ColorSchemes } from "../ChartOptions/Color/ColorScheme";
 
 interface PieChartProps {
-	updateChartMargins: (propKey: number | string, option: string, value: any) => void;
+	updateChartMargins: (propKey: string, option: string, value: any) => void;
 }
 const PieChart = ({
 	//props
@@ -38,7 +38,6 @@ const PieChart = ({
 
 	const [chartDataKeys, setChartDataKeys] = useState<string[]>([]);
 	var chartThemes: any[];
-	console.log(chartData);
 
 	useEffect(() => {
 		if (chartData.length >= 1) {
@@ -101,7 +100,10 @@ const PieChart = ({
 						//  chartArea ? false : true,
 						legend: {
 							type: "scroll",
-							show: chartControl.legendOptions?.showLegend,
+							show:
+								graphDimension.height > 175 && graphDimension.width > 265
+									? chartControl.legendOptions?.showLegend
+									: false,
 							itemHeight: chartControl.legendOptions?.symbolHeight,
 							itemWidth: chartControl.legendOptions?.symbolWidth,
 							itemGap: chartControl.legendOptions?.itemGap,
@@ -124,7 +126,10 @@ const PieChart = ({
 								clockwise: chartControl.axisOptions.pieAxisOptions.clockWise,
 								label: {
 									position: chartControl.labelOptions.pieLabel.labelPosition,
-									show: chartControl.labelOptions.showLabel,
+									show:
+										graphDimension.height > 100 && graphDimension.width > 220
+											? chartControl.labelOptions.showLabel
+											: false,
 									fontSize: chartControl.labelOptions.fontSize,
 									color: chartControl.labelOptions.labelColorManual
 										? chartControl.labelOptions.labelColor
@@ -143,6 +148,7 @@ const PieChart = ({
 												chartControl,
 												formattedValue
 											);
+
 											return formattedValue;
 										}
 									},
@@ -167,7 +173,7 @@ const mapStateToProps = (state: ChartsMapStateToProps) => {
 
 const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 	return {
-		updateChartMargins: (propKey: number | string, option: string, value: any) =>
+		updateChartMargins: (propKey: string, option: string, value: any) =>
 			dispatch(updateChartMargins(propKey, option, value)),
 	};
 };

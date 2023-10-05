@@ -1,6 +1,6 @@
 .charAxesArea {
 
-
+padding:0px 7px;
 	width: 14.5rem;
 	display: flex;
 	flex-direction: column;
@@ -50,6 +50,7 @@
 }
 
 .axisInfo {
+	text-align: center;
 	font-size: 11px;
 	color: #999999;
 	/* padding: 2px 0; */

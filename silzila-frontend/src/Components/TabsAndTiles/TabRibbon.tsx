@@ -7,8 +7,7 @@ import { Dispatch } from "redux";
 import { TabTilPropsSelectedDatasetList } from "../../redux/TabTile/TabTilePropsInterfaces";
 
 import { TabRibbonProps, TabRibbonStateProps } from "./TabRibbonInterfaces";
-import { IndTabs, Tabs } from "../../redux/TabTile/TabStateInterfaces";
-import { IndChartPropProperties } from "../../redux/ChartPoperties/ChartPropertiesInterfaces";
+import { IndTabs } from "../../redux/TabTile/TabStateInterfaces";
 import {
 	actionsToEnableRenameTab,
 	actionsToRenameTab,
@@ -20,6 +19,9 @@ import {
 	actionsToUpdateSelectedTile,
 } from "../../redux/TabTile/TabTileActionsAndMultipleDispatches";
 import AddIcon from "@mui/icons-material/Add";
+import {addChartFilterTabTileName} from '../../redux/ChartFilterGroup/ChartFilterGroupStateActions';
+import Logger from "../../Logger";
+
 
 const TabRibbon = ({
 	// state
@@ -28,6 +30,7 @@ const TabRibbon = ({
 	// tileState,
 	// tableData,
 	chartProp,
+	chartGroup,
 
 	// dispatch
 	addTab,
@@ -36,7 +39,20 @@ const TabRibbon = ({
 	enableRenameTab,
 	completeRenameTab,
 	selectTile,
+	addChartFilterTabTileName
 }: TabRibbonProps) => {
+
+	const addReportFilterGroup = (nextPropKey:string)=>{
+		var propKey: string = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
+
+		let selectedFilterGroups = chartGroup.tabTile[propKey] || [];
+		let selectedDatasetID = chartProp.properties[propKey].selectedDs.id;
+
+	//	if (!(selectedFilterGroups && selectedFilterGroups.length > 0)) {
+			addChartFilterTabTileName(selectedDatasetID, nextPropKey);
+	///	}
+	}
+
 	const handleAddTab = () => {
 		let tabId: number = tabTileProps.nextTabId;
 
@@ -48,6 +64,9 @@ const TabRibbon = ({
 			chartProp.properties[propKey].selectedDs,
 			chartProp.properties[propKey].selectedTable
 		);
+
+		addReportFilterGroup(`${tabId}.${tabTileProps.selectedTileId}`);
+
 	};
 
 	const handleSelectTab = (tabName: string, tabId: number) => {
@@ -70,7 +89,7 @@ const TabRibbon = ({
 		let tileId: number = tabObj.selectedTileId;
 		let nextTileId: number = tabObj.nextTileId;
 
-		// let propKey: number = parseFloat(`${tabId}.${tileId}`);
+		// let propKey:string = `${tabId}.${tileId}`;
 		// let chartObj: IndChartPropProperties = chartProp.properties[propKey];
 
 		selectTile(tabId, tileName, tileId, nextTileId, true);
@@ -107,10 +126,9 @@ const TabRibbon = ({
 			if (addingNewTab) {
 				removeTab(tabName, tabId, tabToRemoveIndex);
 			} else {
-				console.log("case");
+				Logger("info", "case");
 				let newTabId: number = tabState.tabList[nextSelection];
 				let newObj: IndTabs = tabState.tabs[newTabId];
-				console.log(newObj);
 
 				removeTab(tabName, tabId, tabToRemoveIndex, newObj);
 			}
@@ -169,6 +187,8 @@ const mapStateToProps = (state: TabRibbonStateProps) => {
 		tabTileProps: state.tabTileProps,
 		tabState: state.tabState,
 		chartProp: state.chartProperties,
+		chartGroup : state.chartFilterGroup
+
 	};
 };
 
@@ -201,6 +221,8 @@ const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 			nextTileId: number,
 			fromTab: boolean
 		) => dispatch(actionsToUpdateSelectedTile(tabId, tileName, tileId, nextTileId, fromTab)),
+		addChartFilterTabTileName: (selectedDatasetID: string, tabTileName: string) =>
+			dispatch(addChartFilterTabTileName(selectedDatasetID, tabTileName)),
 	};
 };
 

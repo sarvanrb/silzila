@@ -22,9 +22,9 @@ import {
 import { ChartConLabelOptions } from "../../../redux/ChartPoperties/ChartControlsInterface";
 import { ChartOptionsProps, ChartOptionsStateProps } from "../CommonInterfaceForChartOptions";
 interface ChartLabelsProps {
-	updateLabelOption: (propKey: number | string, option: string, value: any) => void;
-	updateLabelPosition: (propKey: number | string, value: any) => void;
-	updateLabelPadding: (propKey: number | string, value: any) => void;
+	updateLabelOption: (propKey: string, option: string, value: any) => void;
+	updateLabelPosition: (propKey: string, value: any) => void;
+	updateLabelPadding: (propKey: string, value: any) => void;
 }
 
 const ChartLabels = ({
@@ -38,11 +38,7 @@ const ChartLabels = ({
 	updateLabelPosition,
 	updateLabelPadding,
 }: ChartOptionsProps & ChartLabelsProps) => {
-	var propKey: number = parseFloat(
-		`${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`
-	);
-
-	console.log(chartControls.properties[propKey].labelOptions.fontSize);
+	var propKey: string = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
 
 	const [isColorPopoverOpen, setColorPopOverOpen] = useState<boolean>(false);
 	const [anchorEl, setAnchorEl] = useState<string | any>("");
@@ -50,7 +46,6 @@ const ChartLabels = ({
 	const showLabel: boolean = chartControls.properties[propKey].labelOptions.showLabel;
 	var labelOptions: ChartConLabelOptions = chartControls.properties[propKey].labelOptions;
 
-	console.log(labelOptions);
 
 	const labelPositionOptions: any[] = [
 		{ name: "Outside", value: "outside" },
@@ -94,7 +89,6 @@ const ChartLabels = ({
 										value={labelOptions.pieLabel.labelPosition}
 										variant="outlined"
 										onChange={e => {
-											console.log(e.target.value);
 											updateLabelPosition(propKey, e.target.value);
 										}}
 										sx={{
@@ -147,7 +141,6 @@ const ChartLabels = ({
 								}
 								sliderMinMax={{ min: 8, max: 50, step: 1 }}
 								changeValue={(value: number) => {
-									console.log(value);
 									updateLabelOption(propKey, "fontSize", value);
 								}}
 							/>
@@ -260,12 +253,12 @@ const mapStateToProps = (state: ChartOptionsStateProps, ownProps: any) => {
 
 const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 	return {
-		updateLabelOption: (propKey: number | string, option: string, value: any) =>
+		updateLabelOption: (propKey: string, option: string, value: any) =>
 			dispatch(updateLabelOption(propKey, option, value)),
 
-		updateLabelPosition: (propKey: number | string, value: any) =>
+		updateLabelPosition: (propKey: string, value: any) =>
 			dispatch(updateLabelPosition(propKey, value)),
-		updateLabelPadding: (propKey: number | string, value: any) =>
+		updateLabelPadding: (propKey: string, value: any) =>
 			dispatch(updateLabelPadding(propKey, value)),
 	};
 };

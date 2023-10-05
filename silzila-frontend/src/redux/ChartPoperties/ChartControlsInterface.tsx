@@ -1,13 +1,13 @@
 export interface ChartControlsProps {
 	chartData: any;
 	queryResult: any;
-	isRichText: boolean;
 	richText: string;
 	colorScheme: string;
 	areaBackgroundColor: string;
 	areaOpacity: number;
 
 	colorScale: ChartConColorScale;
+	cardControls: CardControls;
 	legendOptions: ChartConLegendOptions;
 	chartMargin: ChartConChartMargin;
 	calendarStyleOptions: ChartConCalenderStyleOptions;
@@ -20,13 +20,14 @@ export interface ChartControlsProps {
 	labelOptions: ChartConLabelOptions;
 	formatOptions: ChartConFormateOptions;
 	axisOptions: ChartConAxisOptions;
+	tableConditionalFormats: any;
 
 	mouseOver: {
 		enable: boolean;
 	};
 }
 export interface ChartControlProperties {
-	[key: number | string]: ChartControlsProps;
+	[key: string]: ChartControlsProps;
 }
 
 interface ChartConColorScale {
@@ -45,6 +46,8 @@ interface ChartConLegendOptions {
 	itemGap: number;
 	position: { pos: string; top: string; left: string };
 	orientation: string;
+	left: string;
+	top: string;
 }
 
 interface ChartConChartMargin {
@@ -285,6 +288,22 @@ interface ChartConAxisMinMax {
 	minValue: number;
 	enableMax: boolean;
 	maxValue: number;
+}
+
+interface CardControls {
+	height: number;
+	width: number;
+	fontSize: number;
+	subtextFontSize: number;
+	isDragging: boolean;
+	mainTextPos: any;
+	subTextPos: any;
+	subText: string;
+	borderTickness: number;
+	borderRadius: number;
+	borderColor: string;
+	dashStyle: string;
+	fontStyle: string;
 }
 
 export interface ChartConAxisOptions {

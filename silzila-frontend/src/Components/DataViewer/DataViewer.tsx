@@ -16,7 +16,6 @@ import "./dataViewer.css";
 import { connect } from "react-redux";
 import TabRibbon from "../TabsAndTiles/TabRibbon";
 import { TabTileStateProps, TabTileStateProps2 } from "../../redux/TabTile/TabTilePropsInterfaces";
-
 import TableRowsIcon from "@mui/icons-material/TableRows";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import TileRibbon from "../TabsAndTiles/TileRibbon";
@@ -38,9 +37,15 @@ import filterIcon from "../../assets/filter_icon.svg";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import GridViewIcon from "@mui/icons-material/GridView";
 import AspectRatioRoundedIcon from "@mui/icons-material/AspectRatioRounded";
+import {
+	ChartPropProperties,
+	ChartPropertiesProps,
+} from "../../redux/ChartPoperties/ChartPropertiesInterfaces";
+import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 
 interface DataViewerProps {
 	tabTileProps: TabTileStateProps;
+	chartProperties: ChartPropertiesProps;
 	showDashBoard: (tabId: number, showDash: boolean) => void;
 	toggleDataViewerBottom: (show: boolean) => void;
 	toggleColumns: (displayOnlyCol: boolean) => void;
@@ -55,6 +60,7 @@ interface RenderMenuItems {
 function DataViewer({
 	//state
 	tabTileProps,
+	chartProperties,
 	// dispatch
 	showDashBoard,
 	toggleDataViewerBottom,
@@ -63,6 +69,7 @@ function DataViewer({
 }: DataViewerProps) {
 	const [showListofTileMenu, setShowListofTileMenu] = useState<boolean>(true);
 	const [dashboardResizeColumn, setDashboardResizeColumn] = useState<boolean>(false);
+	const [showDashboardFilter, setShowDashboardFilter] = useState<boolean>(false);
 
 	// Whether to show table at the bottom of page or not
 	const handleTableDisplayToggle = () => {
@@ -110,7 +117,7 @@ function DataViewer({
 			style: { height: "2rem", width: "3rem", padding: "5px 6px", margin: "0 8px" },
 		},
 		{
-			name: "chart Filters",
+			name: "Report Filters",
 			icon: filterIcon,
 			style: { height: "2rem", width: "3rem", padding: "4px 3px", marginRight: "8px" },
 		},
@@ -143,21 +150,23 @@ function DataViewer({
 			<MenuBar from="dataViewer" />
 			<div className="tabArea">
 				<TabRibbon />
-				{!tabTileProps.showDash ? (
+				{!tabTileProps.showDash &&
+				chartProperties.properties[
+					`${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`
+				].chartType !== "richText" ? (
 					<div
 						style={{
 							display: "flex",
 							alignItems: "right",
 							justifyContent: "center",
 							height: "2rem",
-							// cursor: "pointer",
 						}}
 					>
 						{renderMenu}
 					</div>
 				) : null}
 				{tabTileProps.showDash || tabTileProps.dashMode === "Present" ? (
-					<div style={{ display: "flex", alignItems: "center" }}>
+					<div style={{ display: "flex", alignItems: "center", paddingRight: "8px" }}>
 						{tabTileProps.dashMode === "Edit" ? (
 							<div
 								style={{
@@ -169,26 +178,40 @@ function DataViewer({
 									flexWrap: "wrap",
 								}}
 							>
-								<div className="dashboardMenuIconStyle">
+								<div
+									className={
+										showListofTileMenu
+											? "dashboardMenuIconStyleSelected"
+											: "dashboardMenuIconStyle"
+									}
+								>
 									<Tooltip title="List of Tiles">
 										<GridViewIcon
 											sx={{ fontSize: "20px", marginTop: "2px" }}
 											onClick={() => {
 												if (tabTileProps.dashMode === "Edit") {
 													setDashboardResizeColumn(false);
+													setShowDashboardFilter(false);
 													setShowListofTileMenu(!showListofTileMenu);
 												}
 											}}
 										/>
 									</Tooltip>
 								</div>
-								<div className="dashboardMenuIconStyle">
+								<div
+									className={
+										dashboardResizeColumn
+											? "dashboardMenuIconStyleSelected"
+											: "dashboardMenuIconStyle"
+									}
+								>
 									<Tooltip title="Dashboard Size">
 										<AspectRatioRoundedIcon
 											sx={{ fontSize: "20px", marginTop: "2px" }}
 											onClick={() => {
 												if (tabTileProps.dashMode === "Edit") {
 													setShowListofTileMenu(false);
+													setShowDashboardFilter(false);
 													setDashboardResizeColumn(
 														!dashboardResizeColumn
 													);
@@ -199,6 +222,28 @@ function DataViewer({
 								</div>
 							</div>
 						) : null}
+						<div
+							className={
+								showDashboardFilter
+									? "dashboardMenuIconStyleSelected"
+									: "dashboardMenuIconStyle"
+							}
+						>
+							<Tooltip title="Dashboard Filter">
+								<FilterAltOutlinedIcon
+									sx={{
+										fontSize: "25px",
+									}}
+									onClick={() => {
+										// if (tabTileProps.dashMode === "Edit") {
+										setShowListofTileMenu(false);
+										setDashboardResizeColumn(false);
+										setShowDashboardFilter(!showDashboardFilter);
+										// }
+									}}
+								/>
+							</Tooltip>
+						</div>
 					</div>
 				) : null}
 			</div>
@@ -207,6 +252,10 @@ function DataViewer({
 				<DashBoard
 					showListofTileMenu={showListofTileMenu}
 					dashboardResizeColumn={dashboardResizeColumn}
+					showDashBoardFilterMenu={showDashboardFilter}
+					setShowListofTileMenu={setShowListofTileMenu}
+					setDashboardResizeColumn={setDashboardResizeColumn}
+					setShowDashBoardFilter={setShowDashboardFilter}
 				/>
 			) : (
 				<React.Fragment>
@@ -254,7 +303,7 @@ function DataViewer({
 									) : (
 										<Tooltip title="Show Column Headers only">
 											<TableRowsIcon
-												style={{ fontSize: "20px", color: "#666" }}
+												style={{ fontSize: "20px", color: "#858585" }}
 												onClick={() => handleColumnsOnlyDisplay(true)}
 											/>
 										</Tooltip>
@@ -268,7 +317,7 @@ function DataViewer({
 										<KeyboardArrowUpIcon
 											style={{
 												fontSize: "20px",
-												color: "#383837",
+												color: "#858585",
 											}}
 										/>
 									</Tooltip>
@@ -294,9 +343,10 @@ function DataViewer({
 //                                 REDUX MAPPING STATE AND DISPATCH TO PROPS
 // ===========================================================================================
 
-const mapStateToProps = (state: TabTileStateProps2, ownProps: any) => {
+const mapStateToProps = (state: TabTileStateProps2 & any, ownProps: any) => {
 	return {
 		tabTileProps: state.tabTileProps,
+		chartProperties: state.chartProperties,
 	};
 };
 

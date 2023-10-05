@@ -37,7 +37,6 @@ export const updateSelectedTab = (
 	showDash?: boolean,
 	dashMode?: string
 ) => {
-	console.log(tabName, tabId);
 	return {
 		type: "SELECTED_TAB",
 		payload: { tabName: tabName, tabId: tabId, showDash, dashMode },
@@ -125,6 +124,12 @@ export const resetTabTileState = () => {
 	return { type: "RESET_TABTILE_PROPS" };
 };
 
+//19
+export const setDashTileSwitched = (isSwitched:boolean) => {
+	return { type: "SET_DASH_TILE_SWITCHED",  payload: isSwitched };
+};
+
+
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 // MULTIPLE DISPATCHES
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -189,7 +194,6 @@ export const actionsToAddTile = ({
 }: ActionsToAddTileProps) => {
 	//let tileName = tileName ? tileName : `Tile - ${nextTileId}`;
 	// let tileName = `Tile - ${nextTileId}`;
-	// console.log(table);
 	let tileName: string = `Tile - ${nextTileId}`;
 	return (dispatch: Dispatch<any>) => {
 		dispatch(addProp(tabId, nextTileId, table, newTab, selectedDs, selectedTablesInDs));
@@ -210,7 +214,6 @@ export const actionsToUpdateSelectedTile = (
 	fromTab: boolean,
 	fileId?: any
 ) => {
-	console.log(tabId, tileName, tileId, nextTileId, fromTab, fileId);
 	return (dispatch: Dispatch<any>) => {
 		dispatch(updateSelectedTileToTab(tabId, tileName, tileId));
 		dispatch(updateSelectedTile(tileName, tileId, nextTileId));
@@ -267,7 +270,6 @@ export const actionsToRemoveTab = (
 ) => {
 	return (dispatch: Dispatch<any>) => {
 		if (newObj) {
-			console.log(newObj);
 			dispatch(
 				updateSelectedTab(newObj.tabName, newObj.tabId, newObj.showDash, newObj.dashMode)
 			);
@@ -305,7 +307,6 @@ export const actionsToAddTileForRichText = ({
 }) => {
 	//let tileName = tileName ? tileName : `Tile - ${nextTileId}`;
 	// let tileName = `Tile - ${nextTileId}`;
-	// //console.log(table);
 	let tileName: any;
 	return (dispatch: Dispatch<any>) => {
 		dispatch(addProp(tabId, nextTileId, table, newTab, selectedDs, selectedTablesInDs));
@@ -318,7 +319,6 @@ export const actionsToAddTileForRichText = ({
 		// dispatch(setChartTitle(`${tabId}.${nextTileId}`, chartName));
 		dispatch(changeChartType(`${tabId}.${nextTileId}`, chartName));
 		// if (chartName === "richText") {
-		// 	//console.log(chartName);
 		// }
 	};
 };

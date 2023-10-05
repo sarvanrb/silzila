@@ -8,12 +8,12 @@ import { Dispatch } from "redux";
 import { updateSankeyStyleOptions } from "../../../redux/ChartPoperties/ChartControlsActions";
 import { ChartOptionsProps, ChartOptionsStateProps } from "../CommonInterfaceForChartOptions";
 
-const menuItemStyle = {
+export const menuItemStyle = {
 	padding: "2px 10px",
 	fontSize: "12px",
 };
 
-const SelectComponentStyle = {
+export const SelectComponentStyle = {
 	fontSize: "12px",
 	width: "90%",
 	margin: "0 auto 0.5rem auto",
@@ -31,12 +31,12 @@ const SankeyLabelOptions = ({
 
 	updateSankeyStyleOptions,
 }: ChartOptionsProps & {
-	updateSankeyStyleOptions: (propKey: number | string, option: string, value: any) => void;
+	updateSankeyStyleOptions: (propKey: string, option: string, value: any) => void;
 }) => {
 	var propKey = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
-	const handleOnSlide = debounce((value: any) => {
-		updateSankeyStyleOptions(propKey, "labelDistance", value);
-	}, 5000);
+	// const handleOnSlide = debounce((value: any) => {
+	// 	updateSankeyStyleOptions(propKey, "labelDistance", value);
+	// }, 5000);
 
 	const sankeyLabelRotationOption = [
 		{ name: "Horizondal", value: 0 },
@@ -70,8 +70,8 @@ const SankeyLabelOptions = ({
 				sliderValue={chartControls.properties[propKey].sankeyControls.labelDistance}
 				sliderMinMax={{ min: 0, max: 50, step: 1 }}
 				changeValue={value => {
-					handleOnSlide(value);
-					// updateSankeyStyleOptions(propKey, "labelDistance", value);
+					// handleOnSlide(value);
+					updateSankeyStyleOptions(propKey, "labelDistance", value);
 				}}
 			/>
 			<div className="optionDescription">Label Rotate</div>
@@ -124,7 +124,7 @@ const mapStateToProps = (state: ChartOptionsStateProps, ownProps: any) => {
 
 const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 	return {
-		updateSankeyStyleOptions: (propKey: number | string, option: string, value: any) =>
+		updateSankeyStyleOptions: (propKey: string, option: string, value: any) =>
 			dispatch(updateSankeyStyleOptions(propKey, option, value)),
 	};
 };

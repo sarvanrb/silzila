@@ -21,6 +21,8 @@ import TreeMap from "../Charts/TreeMap";
 import Sankey from "../Charts/Sankey";
 import StackedAreaChart from "../Charts/StackedAreaChart";
 import PieChart from "../Charts/PieChart";
+import SimpleCard from "../Charts/SimpleCard";
+import TableChart from '../Charts/TableChart/TableChart';
 
 const DashGraph = ({
 	// props
@@ -36,8 +38,13 @@ const DashGraph = ({
 	const renderGraph = () => {
 		var dimensions = {
 			height:
-				parseInt(tabState.tabs[tabId].dashTilesDetails[propKey].height, 10) * gridSize.y -
-				32,
+				chartProp.properties[propKey].chartType === "simplecard"
+					? parseInt(tabState.tabs[tabId].dashTilesDetails[propKey].height, 10) *
+							gridSize.y -
+					  2
+					: parseInt(tabState.tabs[tabId].dashTilesDetails[propKey].height, 10) *
+							gridSize.y -
+					  32,
 			width:
 				parseInt(tabState.tabs[tabId].dashTilesDetails[propKey].width, 10) * gridSize.x - 4,
 		};
@@ -206,6 +213,20 @@ const DashGraph = ({
 						chartArea="dashboard"
 					/>
 				);
+			case "simplecard":
+				return (
+					<SimpleCard
+						propKey={propKey}
+						graphDimension={dimensions}
+						chartArea="dashboard"
+					/>
+				);
+			case "table":
+				return(<TableChart
+					propKey={propKey}
+					graphDimension={dimensions}
+					chartArea="dashboard"
+				></TableChart>);
 		}
 	};
 	return <React.Fragment>{renderGraph()}</React.Fragment>;

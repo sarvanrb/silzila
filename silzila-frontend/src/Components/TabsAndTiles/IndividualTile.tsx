@@ -22,11 +22,16 @@ import "./individualTile.css";
 import { connect } from "react-redux";
 import { renameTile } from "../../redux/TabTile/TileActions";
 import { actionsToAddTile } from "../../redux/TabTile/TabTileActionsAndMultipleDispatches";
+import {duplicateChartFilterGroups,addChartFilterTabTileName} from '../../redux/ChartFilterGroup/ChartFilterGroupStateActions';
+import {ChartFilterGroupProps} from "../../redux/ChartFilterGroup/ChartFilterGroupInterface";
+import {ChartFilterGroupStateProps} from '../../redux/ChartFilterGroup/ChartFilterGroupInterface';
+import Logger from "../../Logger";
 
 type IndTileStateProps = TabStateProps2 &
 	TileStateProps2 &
 	TabTileStateProps2 &
 	ChartPropertiesStateProps &
+	ChartFilterGroupStateProps &
 	ChartControlStateProps;
 
 interface IndividualTileProps {
@@ -36,6 +41,7 @@ interface IndividualTileProps {
 	tileState: TileStateProps;
 	chartProperties: ChartPropertiesProps;
 	chartControls: ChartControl;
+	chartGroup:ChartFilterGroupProps;
 	//props from parent
 	tabName: string;
 	tileName: string;
@@ -61,8 +67,10 @@ interface IndividualTileProps {
 		selectedDs: any,
 		selectedTablesInDs: any
 	) => void;
-	duplicateControl: (propKey: number, chartControl: ChartControlsProps) => void;
-	duplicateChartProperty: (propKey: number, chartProp: any) => void;
+	duplicateControl: (propKey: string, chartControl: ChartControlsProps) => void;
+	duplicateChartProperty: (propKey: string, chartProp: any) => void;
+	addChartFilterTabTileName: (selectedDatasetID: string, tabTileName: string) => void;
+	duplicateChartFilterGroups: (tabTileName: string, selectedGroups: any) => void;
 }
 
 const IndividualTile = ({
@@ -86,6 +94,8 @@ const IndividualTile = ({
 	actionsToAddTile,
 	duplicateControl,
 	duplicateChartProperty,
+	duplicateChartFilterGroups,
+	addChartFilterTabTileName,
 
 	//state
 	tabTileProps,
@@ -93,6 +103,7 @@ const IndividualTile = ({
 	tileState,
 	chartControls,
 	chartProperties,
+	chartGroup
 }: IndividualTileProps) => {
 	const [renameValue, setRenameValue] = useState<string>(tileName);
 
@@ -118,8 +129,7 @@ const IndividualTile = ({
 		tabId: number,
 		nextTileId: number
 	) {
-		tileState.tileList[tabId].map((tileKey: any) => {
-			console.log(tileKey);
+		tileState.tileList[tabId].forEach((tileKey: any) => {
 			if (tileState.tiles[tileKey].tileName === newName) {
 				count = count + 1;
 				newName = `${fromTileName} - copy(${count})`;
@@ -127,6 +137,18 @@ const IndividualTile = ({
 			}
 		});
 		renameTile(tabId, nextTileId, newName);
+
+
+		var propKey: string = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
+		let selectedFilterGroups = chartGroup.tabTile[propKey] || [];
+		let selectedDatasetID = chartProperties.properties[propKey].selectedDs.id;
+
+	///	if (!(selectedFilterGroups && selectedFilterGroups.length > 0)) {
+			addChartFilterTabTileName(selectedDatasetID, `${tabId}.${nextTileId}`);
+			duplicateChartFilterGroups(`${tabId}.${nextTileId}` , selectedFilterGroups);
+	///	}
+
+		
 	}
 
 	const handleDuplicateTile = () => {
@@ -137,11 +159,8 @@ const IndividualTile = ({
 
 		let tabObj: any = tabState.tabs[tabTileProps.selectedTabId];
 
-		var propKey: number = parseFloat(
-			`${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`
-		);
-
-		var nextPropKey: number = parseFloat(`${tabTileProps.selectedTabId}.${tabObj.nextTileId}`);
+		var propKey: string = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
+		var nextPropKey: string = `${tabTileProps.selectedTabId}.${tabObj.nextTileId}`;
 
 		actionsToAddTile(
 			tabObj.tabId, //tabId
@@ -251,19 +270,19 @@ const IndividualTile = ({
 				}
 				onDoubleClick={e => {
 					e.stopPropagation();
-					console.log("Double clicked");
+					Logger("info", "Double clicked");
 					renameTileBegin(tabId, tileId);
 				}}
 				onClick={e => {
 					e.stopPropagation();
-					console.log("Left clicked");
+					Logger("info", "Left clicked");
 					selectTile(tileId, tileName, tabId, tabName);
 				}}
 				title={`${tileName}. Double click to edit name`}
 				onContextMenu={e => {
 					e.preventDefault();
 					e.stopPropagation();
-					console.log("Right Click");
+					Logger("info", "Right Click");
 					handleClick(e);
 				}}
 			>
@@ -291,6 +310,8 @@ const mapStateToProps = (state: IndTileStateProps) => {
 		tabTileProps: state.tabTileProps,
 		chartProperties: state.chartProperties,
 		chartControls: state.chartControls,
+		chartGroup : state.chartFilterGroup
+
 	};
 };
 
@@ -316,10 +337,14 @@ const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 					selectedTablesInDs,
 				})
 			),
-		duplicateControl: (propKey: number, chartControl: ChartControlsProps) =>
+		duplicateControl: (propKey: string, chartControl: ChartControlsProps) =>
 			duplicateControl(propKey, chartControl),
-		duplicateChartProperty: (propKey: number, chartProp: any) =>
+		duplicateChartProperty: (propKey: string, chartProp: any) =>
 			dispatch(duplicateChartProperty(propKey, chartProp)),
+		addChartFilterTabTileName: (selectedDatasetID: string, tabTileName: string) =>
+			dispatch(addChartFilterTabTileName(selectedDatasetID, tabTileName)),
+		duplicateChartFilterGroups: (tabTileName: string, selectedGroups: any) =>
+			dispatch(duplicateChartFilterGroups(tabTileName,selectedGroups)),
 	};
 };
 

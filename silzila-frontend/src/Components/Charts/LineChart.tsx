@@ -14,6 +14,7 @@ import {
 } from "../ChartOptions/Format/NumberFormatter";
 import { ChartsReduxStateProps, FormatterValueProps } from "./ChartsCommonInterfaces";
 
+
 const LineChart = ({
 	//props
 	propKey,
@@ -23,7 +24,9 @@ const LineChart = ({
 
 	//state
 	chartControls,
+
 }: ChartsReduxStateProps) => {
+
 	var chartControl: ChartControlsProps = chartControls.properties[propKey];
 
 	let chartData: any[] = chartControl.chartData ? chartControl.chartData : [];
@@ -38,7 +41,10 @@ const LineChart = ({
 				var seriesObj = {
 					type: "line",
 					label: {
-						show: chartControl.labelOptions.showLabel,
+						show:
+							graphDimension.height > 140 && graphDimension.height > 150
+								? chartControl.labelOptions.showLabel
+								: false,
 						fontSize: chartControl.labelOptions.fontSize,
 						color: chartControl.labelOptions.labelColorManual
 							? chartControl.labelOptions.labelColor
@@ -86,7 +92,10 @@ const LineChart = ({
 					animation: chartArea ? false : true,
 					legend: {
 						type: "scroll",
-						show: chartControl.legendOptions?.showLegend,
+						show:
+							graphDimension.height > 210
+								? chartControl.legendOptions?.showLegend
+								: false,
 						itemHeight: chartControl.legendOptions?.symbolHeight,
 						itemWidth: chartControl.legendOptions?.symbolWidth,
 						itemGap: chartControl.legendOptions?.itemGap,
@@ -133,7 +142,10 @@ const LineChart = ({
 									: chartControl.axisOptions.xAxis.tickPaddingBottom,
 						},
 
-						show: chartControl.axisOptions.xAxis.showLabel,
+						show:
+							graphDimension.height > 140 && graphDimension.height > 150
+								? chartControl.axisOptions.xAxis.showLabel
+								: false,
 
 						name: chartControl.axisOptions.xAxis.name,
 						nameLocation: chartControl.axisOptions.xAxis.nameLocation,
@@ -150,7 +162,10 @@ const LineChart = ({
 
 						position: chartControl.axisOptions.yAxis.position,
 
-						show: chartControl.axisOptions.yAxis.showLabel,
+						show:
+							graphDimension.height > 140 && graphDimension.height > 150
+								? chartControl.axisOptions.yAxis.showLabel
+								: false,
 
 						name: chartControl.axisOptions.yAxis.name,
 						nameLocation: chartControl.axisOptions.yAxis.nameLocation,
@@ -206,6 +221,7 @@ const LineChart = ({
 
 	return <>{chartData.length >= 1 ? <RenderChart /> : ""}</>;
 };
+
 const mapStateToProps = (state: ChartControlStateProps, ownProps: any) => {
 	return {
 		chartControls: state.chartControls,

@@ -3,14 +3,42 @@
 
 import update from "immutability-helper";
 
+function removeTagFromHTMLString(htmlString: any, tagName: any, id: string) {
+	// Create a new DOMParser instance
+	const parser = new DOMParser();
+
+	// Parse the HTML string
+	const doc = parser.parseFromString(htmlString, "text/html");
+
+	// Find all the elements with the specified tag name
+	var element = doc.getElementById(id);
+
+	if (element) {
+		element.remove();
+	}
+
+	// Serialize the modified DOM back to an HTML string
+	const modifiedHTMLString = new XMLSerializer().serializeToString(doc);
+
+	return modifiedHTMLString;
+}
+
 const chartControl = {
 	properties: {
 		1.1: {
 			chartData: "",
 			queryResult: "",
-			isRichText: false,
-			richText:
-				'<h1 class="ql-align-center ql-indent-2">Content Header</h1><p><span style="background-color: rgb(255, 255, 0);">Paragraph goes here...</span></p><ul><li>This</li><li>is</li><li>List</li></ul><p>Another Paragraph</p><ol><li>Numbered</li><li>List</li><li><a href="https://silzila.org" rel="noopener noreferrer" target="_blank">silzila</a></li></ol>',
+			measureValue: { value: "", id: "RichTextID" },
+			richText: {
+				text: [
+					{
+						type: "paragraph",
+						children: [{ text: "A line of text in a paragraph." }],
+					},
+				],
+				style: null,
+			},
+
 			colorScheme: "peacock",
 			areaBackgroundColor: "#22194D",
 			areaOpacity: 0.1,
@@ -19,8 +47,8 @@ const chartControl = {
 				colorScaleType: "Automatic",
 				min: 0,
 				max: 0,
-				minColor: "#ffffb3",
-				maxColor: "#b32d00",
+				minColor: "#2bb9bb",
+				maxColor: "#af99db",
 			},
 
 			legendOptions: {
@@ -31,6 +59,8 @@ const chartControl = {
 				itemGap: 10,
 				position: { pos: "Bottom", top: "bottom", left: "center" },
 				orientation: "horizontal",
+				top: "90%",
+				left: "40%",
 			},
 
 			chartMargin: {
@@ -50,6 +80,21 @@ const chartControl = {
 				left: 5,
 			},
 
+			cardControls: {
+				height: 200,
+				width: 350,
+				fontSize: 35,
+				subtextFontSize: 15,
+				isDragging: false,
+				mainTextPos: { x: 129, y: 60 },
+				subTextPos: { x: 126, y: 110 },
+				subText: "",
+				borderTickness: 2,
+				borderRadius: 10,
+				borderColor: "rgba(224,224,224,1)",
+				dashStyle: "solid",
+				fontStyle: "normal",
+			},
 			calendarStyleOptions: {
 				showSplitLine: true,
 				splitLineColor: "black",
@@ -164,19 +209,19 @@ const chartControl = {
 					currencySymbol: "₹",
 					enableRounding: "false",
 					roundingDigits: 1,
-					numberSeparator: "None",
+					numberSeparator: "Abbrev",
 				},
 
 				yAxisFormats: {
 					enableRounding: "false",
 					roundingDigits: 1,
-					numberSeparator: "None",
+					numberSeparator: "Abbrev",
 				},
 
 				xAxisFormats: {
 					enableRounding: "false",
 					roundingDigits: 1,
-					numberSeparator: "None",
+					numberSeparator: "Abbrev",
 				},
 			},
 
@@ -203,23 +248,24 @@ const chartControl = {
 
 				gaugeChartControls: {
 					isStepsAuto: true,
+
 					stepcolor: [
 						{
-							color: "#3fb1e3",
+							color: "#2bb9bb",
 							per: 0.4,
 							isColorAuto: true,
 							stepValue: 40,
 							value: 100,
 						},
 						{
-							color: "#6be6c1",
+							color: "#af99db",
 							per: 0.9,
 							isColorAuto: true,
 							stepValue: 40,
 							value: 100,
 						},
 						{
-							color: "#626c91",
+							color: "#5ab1ef",
 							per: 1,
 							isColorAuto: true,
 							stepValue: 20,
@@ -245,12 +291,12 @@ const chartControl = {
 
 					// onZeroLeft: true,
 					tickSizeLeft: 5,
-					tickPaddingLeft: 5,
+					tickPaddingLeft: 10,
 					tickRotationLeft: 0,
 
 					// onZeroRight: false,
 					tickSizeRight: 5,
-					tickPaddingRight: 5,
+					tickPaddingRight: 10,
 					tickRotationRight: 0,
 				},
 				xAxis: {
@@ -267,12 +313,12 @@ const chartControl = {
 
 					// onZeroBottom: true,
 					tickSizeBottom: 5,
-					tickPaddingBottom: 5,
+					tickPaddingBottom: 10,
 					tickRotationBottom: 0,
 
 					// onZeroTop: false,
 					tickSizeTop: 5,
-					tickPaddingTop: 5,
+					tickPaddingTop: 10,
 					tickRotationTop: 0,
 				},
 				scatterChartMinMax: {
@@ -293,6 +339,13 @@ const chartControl = {
 					maxValue: 10000,
 				},
 			},
+
+			// note : not used these values yet, these are created for table chart conditional format, can remove in future if not needed
+			tableLabel: [],
+			tableGradient: [],
+			tableRule: [],
+
+			tableConditionalFormats: [],
 		},
 	},
 
@@ -309,9 +362,16 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 					[tileKey]: {
 						chartData: "",
 						queryResult: "",
-						isRichText: false,
-						richText:
-							'<h1 class="ql-align-center ql-indent-2">Content Header</h1><p><span style="background-color: rgb(255, 255, 0);">Paragraph goes here...</span></p><ul><li>This</li><li>is</li><li>List</li></ul><p>Another Paragraph</p><ol><li>Numbered</li><li>List</li><li><a href="https://silzila.org" rel="noopener noreferrer" target="_blank">silzila</a></li></ol>',
+						measureValue: { value: "", id: "RichTextID" },
+						richText: {
+							text: [
+								{
+									type: "paragraph",
+									children: [{ text: "A line of text in a paragraph." }],
+								},
+							],
+							style: null,
+						},
 						colorScheme: "peacock",
 						areaBackgroundColor: "#22194D",
 						areaOpacity: 0.1,
@@ -320,8 +380,8 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 							colorScaleType: "Automatic",
 							min: 0,
 							max: 0,
-							minColor: "#ffffb3",
-							maxColor: "#b32d00",
+							minColor: "#2bb9bb",
+							maxColor: "#af99db",
 						},
 
 						legendOptions: {
@@ -349,6 +409,21 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 							right: 5,
 							bottom: 5,
 							left: 5,
+						},
+						cardControls: {
+							height: 200,
+							width: 350,
+							fontSize: 35,
+							subtextFontSize: 15,
+							isDragging: false,
+							mainTextPos: { x: 129, y: 60 },
+							subTextPos: { x: 126, y: 110 },
+							subText: "",
+							borderTickness: 2,
+							borderRadius: 10,
+							borderColor: "rgba(224,224,224,1)",
+							dashStyle: "solid",
+							fontStyle: "normal",
 						},
 
 						calendarStyleOptions: {
@@ -465,19 +540,19 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 								currencySymbol: "₹",
 								enableRounding: "false",
 								roundingDigits: 1,
-								numberSeparator: "None",
+								numberSeparator: "Abbrev",
 							},
 
 							yAxisFormats: {
 								enableRounding: "false",
 								roundingDigits: 1,
-								numberSeparator: "None",
+								numberSeparator: "Abbrev",
 							},
 
 							xAxisFormats: {
 								enableRounding: "false",
 								roundingDigits: 1,
-								numberSeparator: "None",
+								numberSeparator: "Abbrev",
 							},
 						},
 
@@ -504,23 +579,24 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 
 							gaugeChartControls: {
 								isStepsAuto: true,
+
 								stepcolor: [
 									{
-										color: "#3fb1e3",
+										color: "#2bb9bb",
 										per: 0.4,
 										isColorAuto: true,
 										stepValue: 40,
 										value: 100,
 									},
 									{
-										color: "#6be6c1",
+										color: "#af99db",
 										per: 0.9,
 										isColorAuto: true,
 										stepValue: 40,
 										value: 100,
 									},
 									{
-										color: "#626c91",
+										color: "#5ab1ef",
 										per: 1,
 										isColorAuto: true,
 										stepValue: 20,
@@ -546,12 +622,12 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 
 								// onZeroLeft: true,
 								tickSizeLeft: 5,
-								tickPaddingLeft: 5,
+								tickPaddingLeft: 10,
 								tickRotationLeft: 0,
 
 								// onZeroRight: false,
 								tickSizeRight: 5,
-								tickPaddingRight: 5,
+								tickPaddingRight: 10,
 								tickRotationRight: 0,
 							},
 							xAxis: {
@@ -568,12 +644,12 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 
 								// onZeroBottom: true,
 								tickSizeBottom: 5,
-								tickPaddingBottom: 5,
+								tickPaddingBottom: 10,
 								tickRotationBottom: 0,
 
 								// onZeroTop: false,
 								tickSizeTop: 5,
-								tickPaddingTop: 5,
+								tickPaddingTop: 10,
 								tickRotationTop: 0,
 							},
 							scatterChartMinMax: {
@@ -594,6 +670,11 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 								maxValue: 10000,
 							},
 						},
+						tableLabel: [],
+						tableGradient: [],
+						tableRule: [],
+
+						tableConditionalFormats: [],
 					},
 				},
 				propList: {
@@ -611,9 +692,16 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 					[tileKey2]: {
 						chartData: "",
 						queryResult: "",
-						isRichText: false,
-						richText:
-							'<h1 class="ql-align-center ql-indent-2">Content Header</h1><p><span style="background-color: rgb(255, 255, 0);">Paragraph goes here...</span></p><ul><li>This</li><li>is</li><li>List</li></ul><p>Another Paragraph</p><ol><li>Numbered</li><li>List</li><li><a href="https://silzila.org" rel="noopener noreferrer" target="_blank">silzila</a></li></ol>',
+						measureValue: { value: "", id: "RichTextID" },
+						richText: {
+							text: [
+								{
+									type: "paragraph",
+									children: [{ text: "A line of text in a paragraph." }],
+								},
+							],
+							style: null,
+						},
 						colorScheme: "peacock",
 						areaBackgroundColor: "#22194D",
 						areaOpacity: 0.1,
@@ -622,8 +710,23 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 							colorScaleType: "Automatic",
 							min: 0,
 							max: 0,
-							minColor: "#ffffb3",
-							maxColor: "#b32d00",
+							minColor: "#2bb9bb",
+							maxColor: "#af99db",
+						},
+						cardControls: {
+							height: 200,
+							width: 350,
+							fontSize: 35,
+							subtextFontSize: 15,
+							isDragging: false,
+							mainTextPos: { x: 129, y: 60 },
+							subTextPos: { x: 126, y: 110 },
+							subText: "",
+							borderTickness: 2,
+							borderRadius: 10,
+							borderColor: "rgba(224,224,224,1)",
+							dashStyle: "solid",
+							fontStyle: "normal",
 						},
 
 						legendOptions: {
@@ -767,19 +870,19 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 								currencySymbol: "₹",
 								enableRounding: "false",
 								roundingDigits: 1,
-								numberSeparator: "None",
+								numberSeparator: "Abbrev",
 							},
 
 							yAxisFormats: {
 								enableRounding: "false",
 								roundingDigits: 1,
-								numberSeparator: "None",
+								numberSeparator: "Abbrev",
 							},
 
 							xAxisFormats: {
 								enableRounding: "false",
 								roundingDigits: 1,
-								numberSeparator: "None",
+								numberSeparator: "Abbrev",
 							},
 						},
 
@@ -806,23 +909,24 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 
 							gaugeChartControls: {
 								isStepsAuto: true,
+
 								stepcolor: [
 									{
-										color: "#3fb1e3",
+										color: "#2bb9bb",
 										per: 0.4,
 										isColorAuto: true,
 										stepValue: 40,
 										value: 100,
 									},
 									{
-										color: "#6be6c1",
+										color: "#af99db",
 										per: 0.9,
 										isColorAuto: true,
 										stepValue: 40,
 										value: 100,
 									},
 									{
-										color: "#626c91",
+										color: "#5ab1ef",
 										per: 1,
 										isColorAuto: true,
 										stepValue: 20,
@@ -848,12 +952,12 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 
 								// onZeroLeft: true,
 								tickSizeLeft: 5,
-								tickPaddingLeft: 5,
+								tickPaddingLeft: 10,
 								tickRotationLeft: 0,
 
 								// onZeroRight: false,
 								tickSizeRight: 5,
-								tickPaddingRight: 5,
+								tickPaddingRight: 10,
 								tickRotationRight: 0,
 							},
 							xAxis: {
@@ -870,12 +974,12 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 
 								// onZeroBottom: true,
 								tickSizeBottom: 5,
-								tickPaddingBottom: 5,
+								tickPaddingBottom: 10,
 								tickRotationBottom: 0,
 
 								// onZeroTop: false,
 								tickSizeTop: 5,
-								tickPaddingTop: 5,
+								tickPaddingTop: 10,
 								tickRotationTop: 0,
 							},
 							scatterChartMinMax: {
@@ -896,6 +1000,11 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 								maxValue: 10000,
 							},
 						},
+						tableLabel: [],
+						tableGradient: [],
+						tableRule: [],
+
+						tableConditionalFormats: [],
 					},
 				},
 				propList: { ...state.propList, [action.payload.tabId]: [tileKey2] },
@@ -932,7 +1041,6 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 			});
 
 		case "DUPLICATE_CHART_CONTROL":
-			console.log(action.payload);
 			return update(state, {
 				properties: { [action.payload.propKey]: { $set: action.payload.chartControl } },
 			});
@@ -1083,39 +1191,6 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 
 		case "RESET_CHART_CONTROLS":
 			return chartControl;
-
-		case "UPDATE_CROSSTAB_STYLE_OPTIONS":
-			return update(state, {
-				properties: {
-					[action.payload.propKey]: {
-						crossTabStyleOptions: {
-							[action.payload.option]: { $set: action.payload.value },
-						},
-					},
-				},
-			});
-
-		case "UPDATE_CROSSTAB_HEADER_LABEL_OPTIONS":
-			return update(state, {
-				properties: {
-					[action.payload.propKey]: {
-						crossTabHeaderLabelOptions: {
-							[action.payload.option]: { $set: action.payload.value },
-						},
-					},
-				},
-			});
-
-		case "UPDATE_CROSSTAB_CELL_LABEL_OPTIONS":
-			return update(state, {
-				properties: {
-					[action.payload.propKey]: {
-						crossTabCellLabelOptions: {
-							[action.payload.option]: { $set: action.payload.value },
-						},
-					},
-				},
-			});
 
 		case "UPDATE_CROSSTAB_STYLE_OPTIONS":
 			return update(state, {
@@ -1331,15 +1406,173 @@ const chartControlsReducer = (state: any = chartControl, action: any) => {
 			});
 
 		case "UPDATE_RICH_TEXT":
+			let _richText = { text: action.payload.value, style: null };
 			return update(state, {
 				properties: {
 					[action.payload.propKey]: {
 						richText: {
-							$set: action.payload.value,
+							$set: _richText,
 						},
 					},
 				},
 			});
+		case "UPDATE_CARD_CONTROLS":
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						cardControls: {
+							[action.payload.option]: {
+								$set: action.payload.value,
+							},
+						},
+					},
+				},
+			});
+
+		case "UPDATE_RICH_TEXT_ON_ADDING_DYNAMIC_MEASURE":
+			let measureText = {};
+
+			if (action.payload.value) {
+				measureText = { text: action.payload.dmValue, style: action.payload.style };
+			} else if (false) {
+				//measureText = removeTagFromHTMLString(state.properties[action.payload.propKey].richText, 'label', "RichTextID" + action.payload.dmId);
+
+				//if(!action.payload?.dmId?.toString()?.includes("RichTextID")){
+				measureText = { text: "", style: "" };
+
+				let _richText = JSON.parse(
+					JSON.stringify(state.properties[action.payload.propKey].richText)
+				);
+
+				_richText?.text?.forEach((list: any) => {
+					let index = list.children.findIndex((item: any) => {
+						if (action.payload.dmId?.toString().includes("RichTextID")) {
+							return item.id == action.payload.dmId;
+						} else {
+							return item.id == "RichTextID" + action.payload.dmId;
+						}
+					});
+
+					if (index > -1) {
+						list.children.splice(index, 1);
+						return;
+					}
+				});
+
+				return update(state, {
+					properties: {
+						[action.payload.propKey]: {
+							richText: {
+								$set: _richText,
+							},
+						},
+					},
+				});
+				// }
+				// else{
+				// 	measureText = {text: action.payload.dmValue, style:  action.payload.style};
+
+				// 	return update(state, {
+				// 		properties: {
+				// 			[action.payload.propKey]: {
+				// 				richText: {
+				// 					$set: measureText
+				// 				},
+				// 			},
+				// 		},
+				// 	});
+				// }
+			}
+
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						measureValue: {
+							$set: { value: measureText, id: "RichTextID" + action.payload.dmId },
+						},
+					},
+				},
+			});
+
+		case "CLEAR_RICH_TEXT":
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						measureValue: {
+							$set: { value: "", id: "" },
+						},
+					},
+				},
+			});
+		case "ADD_TABLE_CONDITIONAL_FORMATS":
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						tableConditionalFormats: {
+							$push: [action.payload.item],
+						},
+					},
+				},
+			});
+
+		case "DELETE_TABLE_CONDITIONAL_FORMATS":
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						tableConditionalFormats: {
+							$splice: [[action.payload.index, 1]],
+						},
+					},
+				},
+			});
+
+		case "UPDATE_CF_OBJECT1": //CF referse to conditional format
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						tableConditionalFormats: {
+							[action.payload.index]: { $set: action.payload.item },
+						},
+					},
+				},
+			});
+
+		case "UPDATE_RULE_OBJECT":
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						tableConditionalFormats: {
+							[action.payload.ObjectIndex]: {
+								value: {
+									[action.payload.itemIndex]: { $set: action.payload.item },
+								},
+							},
+						},
+					},
+				},
+			});
+		/// new code
+		case "ADD_TABLE_LABEL":
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						tableLabel: {
+							$push: [action.payload.item],
+						},
+					},
+				},
+			});
+		case "UPDATE_CF_OBJECT": //CF referse to conditional format
+			return update(state, {
+				properties: {
+					[action.payload.propKey]: {
+						tableConditionalFormats: {
+							$set: action.payload.item,
+						},
+					},
+				},
+			});
+
 		default:
 			return state;
 	}

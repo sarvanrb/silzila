@@ -5,23 +5,53 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { connect } from "react-redux";
 import { Dispatch } from "redux";
-import { updateTabDashDetails } from "../../redux/TabTile/TabActions";
+import {
+	resetGraphHighlight,
+	updateGraphHighlight,
+	updateTabDashDetails,
+} from "../../redux/TabTile/TabActions";
 import { setDashGridSize } from "../../redux/TabTile/TabTileActionsAndMultipleDispatches";
 import { toggleGraphSize } from "../../redux/TabTile/TileActions";
 import "./DashBoard.css";
 import { DashBoardProps, DashBoardStateProps } from "./DashBoardInterfaces";
 import DashBoardLayoutControl from "./DashBoardLayoutControl";
 import GraphRNDDash from "./GraphRNDDash";
+import CloseIcon from "@mui/icons-material/Close";
+import { Checkbox, Tooltip } from "@mui/material";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { toPng } from "html-to-image";
+import { resetPageSettings } from "../../redux/PageSettings/DownloadPageSettingsActions";
+import ChartFilterGroupsContainer from "../ChartFilterGroup/ChartFilterGroupsContainer";
+import ChartData from "../ChartAxes/ChartData";
+
+import {
+	updateDashBoardGroups,
+	deleteDashBoardSelectedGroup,
+	addDashBoardFilterGroupTabTiles,
+	setDashBoardFilterGroupsTabTiles,
+	deleteDashBoardSelectedGroupAllTabTiles,
+	deleteDashBoardSelectedTabTiles,
+} from "../../redux/DashBoardFilterGroup/DashBoardFilterGroupAction";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import Logger from "../../Logger";
 
 const DashBoard = ({
 	// props
 	showListofTileMenu,
 	dashboardResizeColumn,
+	showDashBoardFilterMenu,
+	setShowListofTileMenu,
+	setDashboardResizeColumn,
+	setShowDashBoardFilter,
 
 	// state
+	chartGroup,
+	dashBoardGroup,
 	tabState,
 	tabTileProps,
 	tileState,
+	pageSettings,
 
 	// dispatch
 	updateDashDetails,
@@ -29,6 +59,13 @@ const DashBoard = ({
 	setGridSize,
 	graphHighlight,
 	resetHighlight,
+	resetPageSettings,
+	updateDashBoardGroups,
+	deleteDashBoardSelectedGroup,
+	addDashBoardFilterGroupTabTiles,
+	setDashBoardFilterGroupsTabTiles,
+	deleteDashBoardSelectedGroupAllTabTiles,
+	deleteDashBoardSelectedTabTiles,
 }: DashBoardProps) => {
 	var targetRef = useRef<any>();
 	const [mouseDownOutsideGraphs, setmouseDownOutsideGraphs] = useState<boolean>(false);
@@ -65,6 +102,67 @@ const DashBoard = ({
 		boxSizing: "border-box",
 		zIndex: 20,
 	});
+	const getHeightAndWidth = (paperHeight: number, paperWidth: number) => {
+		var graphHeight = dashStyle.height;
+		var graphWidth = dashStyle.width;
+		const pageHeight = paperHeight - (pageSettings.top_margin + pageSettings.bottom_margin);
+		const pageWidth = paperWidth - (pageSettings.right_margin + pageSettings.left_margin);
+		var heightRatio = pageHeight / graphHeight;
+		var widthRatio = pageWidth / graphWidth;
+		// getting least value
+		var ratio = Math.min(heightRatio, widthRatio);
+		var finalHeight = graphHeight * ratio;
+		var finalWidth = graphWidth * ratio;
+		return { height: finalHeight, width: finalWidth };
+	};
+
+	useEffect(() => {
+		if (pageSettings.callForDownload) {
+			const input = document.getElementById("GraphAreaToDownload") as HTMLElement;
+
+			const d = new Date();
+			const id = `${tabTileProps.selectedTabName}_${d.getDate()}${
+				d.getMonth() + 1
+			}${d.getFullYear()}:${d.getHours()}${d.getMinutes()}${d.getSeconds()}`;
+
+			if (pageSettings.downloadType === "pdf") {
+				html2canvas(input).then(canvas => {
+					const imageData = canvas.toDataURL("image/png");
+
+					const pdf = new jsPDF(
+						pageSettings.SelectedOrientation,
+						"px",
+						pageSettings.selectedFormat
+					);
+					var width = pdf.internal.pageSize.getWidth();
+					var height = pdf.internal.pageSize.getHeight();
+					const heightAndWidth = getHeightAndWidth(height, width);
+					pdf.addImage(
+						imageData,
+						"JPEG",
+						pageSettings.left_margin,
+						pageSettings.top_margin,
+						heightAndWidth.width,
+						heightAndWidth.height
+					);
+					pdf.save(`${id}`);
+					resetPageSettings();
+				});
+			} else {
+				toPng(input, { cacheBust: true })
+					.then((dataUrl: any) => {
+						const link = document.createElement("a");
+						link.download = `${id}`;
+						link.href = dataUrl;
+						link.click();
+						resetPageSettings();
+					})
+					.catch((err: any) => {
+						Logger("error", "", err);
+					});
+			}
+		}
+	}, [pageSettings.callForDownload]);
 
 	// Every time the dimensions or dashboard layout changes,
 	// recompute the space available for graph
@@ -97,13 +195,18 @@ const DashBoard = ({
 				width: targetRef.current.offsetWidth,
 				height: targetRef.current.offsetHeight,
 			});
-			console.log(targetRef);
 		}
 	};
 
 	useLayoutEffect(() => {
 		test_dimensions();
-	}, [tabTileProps.showDash, tabTileProps.dashMode, showListofTileMenu, dashboardResizeColumn]);
+	}, [
+		tabTileProps.showDash,
+		tabTileProps.dashMode,
+		showListofTileMenu,
+		dashboardResizeColumn,
+		showDashBoardFilterMenu,
+	]);
 
 	// Given the dimension of dashboard area available,
 	// if Fullscreen option or Aspect ratio option selected,
@@ -124,8 +227,6 @@ const DashBoard = ({
 
 			// setting dashboard graph area according to above size
 			setinnerDimensions({ width: fullWidth, height: fullHeight });
-			console.log(fullWidth, dimensions.width);
-			console.log(fullHeight, dimensions.height);
 
 			// set grid like background of dashboard accordingly
 			setdashStyle({
@@ -141,7 +242,6 @@ const DashBoard = ({
 			// compute size of each of the grid and save it in store
 			// used by graph area in tile for displaying graph in dashboard size
 			setGridSize({ x: fullWidth / 32, y: fullHeight / 18 });
-			console.log(dashStyle);
 		}
 
 		if (
@@ -205,7 +305,6 @@ const DashBoard = ({
 			}
 		}
 	};
-	console.log(dashStyle);
 
 	// List of tiles to be mapped on the side of dashboard,
 	// allowing users to choose graphs from these tiles
@@ -231,17 +330,19 @@ const DashBoard = ({
 		var checked: boolean = indexOfProps ? true : false;
 
 		return (
-			<div
+			<div key={index}
 				className={
 					tabState.tabs[tabTileProps.selectedTabId].dashTilesDetails[propKey]?.highlight
 						? "listOfGraphsHighlighted"
 						: "listOfGraphs"
 				}
 			>
-				<input
-					type="checkbox"
-					className="graphCheckBox"
-					onChange={() => {
+				<Checkbox
+					size="small"
+					key={index}
+					checked={checked}
+					onChange={event => {
+						updateDashBoardFilters(event, propKey);
 						updateDashDetails(
 							checked,
 							propKey,
@@ -249,16 +350,63 @@ const DashBoard = ({
 							tabTileProps.selectedTabId,
 							propIndex
 						);
-						// toggleGraphSize(propKey, checked ? true : false);
-						toggleGraphSize(propIndex, checked ? true : false);
+						 toggleGraphSize(propKey, checked ? true : false);
+						//toggleGraphSize(propIndex, checked ? true : false);
 					}}
-					checked={checked}
-					key={index}
+					style={{
+						transform: "scale(0.8)",
+						margin: "0px 4px",
+					}}
+					sx={{
+						"&.MuiCheckbox-root": {
+							padding: "0px",
+							margin: "0px",
+						},
+						"&.Mui-checked": {
+							color: "#2bb9bb",
+						},
+					}}
 				/>
+
 				<span className="graphName">{currentObj.tileName}</span>
 			</div>
 		);
 	});
+
+	const updateDashBoardFilters = (event: any, tileSelected: string) => {
+		if (event.target.checked) {
+			chartGroup?.tabTile[tileSelected]?.forEach((groupID: string) => {
+				if (!dashBoardGroup?.filterGroupTabTiles[groupID]) {
+					addDashBoardFilterGroupTabTiles(groupID);
+				}
+
+				if (!dashBoardGroup.groups.includes(groupID)) {
+					updateDashBoardGroups(groupID);
+				}
+
+				let tabTilesList: any = [];
+				tabTilesList.push(tileSelected);
+
+				setDashBoardFilterGroupsTabTiles(groupID, tabTilesList);
+			});
+		} else {
+			dashBoardGroup.groups?.forEach((groupID: string) => {
+				if (dashBoardGroup.filterGroupTabTiles[groupID].includes(tileSelected)) {
+					if (dashBoardGroup.filterGroupTabTiles[groupID].length == 1) {
+						deleteDashBoardSelectedGroup(groupID);
+						deleteDashBoardSelectedGroupAllTabTiles(groupID);
+					} else {
+						deleteDashBoardSelectedTabTiles(
+							groupID,
+							dashBoardGroup.filterGroupTabTiles[groupID].findIndex(
+								(id: string) => id == tileSelected
+							)
+						);
+					}
+				}
+			});
+		}
+	};
 
 	useEffect(() => {
 		renderGraphs();
@@ -299,32 +447,47 @@ const DashBoard = ({
 						e.target.attributes.class.value === container3
 					) {
 						setmouseDownOutsideGraphs(false);
-
-						graphHighlight(
-							tabTileProps.selectedTabId,
-							e.target.attributes.propkey.value,
-							true
-						);
+						// graphHighlight(
+						// 	tabTileProps.selectedTabId,
+						// 	e.target.attributes.propkey.value,
+						// 	true
+						// );
 					} else {
 						setmouseDownOutsideGraphs(true);
-
-						resetHighlight(tabTileProps.selectedTabId);
+						// resetHighlight(tabTileProps.selectedTabId);
 					}
 				}
 			}}
 		>
 			<div className="dashboardOuter" ref={targetRef}>
-				<div className="dashboardArea" style={dashStyle}>
+				<div
+					className="dashboardArea"
+					id="GraphAreaToDownload"
+					style={
+						pageSettings.callForDownload
+							? {
+									...dashStyle,
+									background: "none",
+									backgroundColor: "white",
+									borderTop: "2px solid rgba(224,224,224,1)",
+							  }
+							: dashStyle
+					}
+				>
 					{tabState.tabs[tabTileProps.selectedTabId].tilesInDashboard.length > 0 ? (
 						renderGraphs()
 					) : (
 						<div
+							id="GraphAreaToDownload"
 							style={{
 								height: "100%",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "center",
 								color: "#999999",
+								borderTop: pageSettings.callForDownload
+									? "2px solid rgba(224,224,224,1)"
+									: "0px",
 							}}
 						>
 							<pre style={{ fontFamily: "Monaco", fontSize: "16px" }}>
@@ -340,30 +503,73 @@ const DashBoard = ({
 					{showListofTileMenu ? (
 						<div className="dashBoardSideBar">
 							<div className="tileListContainer">
-								<div className="axisTitle">List of Tiles</div>
+								<div className="axisTitle">
+									List of Tiles
+									<Tooltip title="Hide">
+										<KeyboardArrowUpIcon
+											sx={{
+												fontSize: "16px",
+												float: "right",
+												marginRight: "-4px",
+											}}
+											onClick={() => setShowListofTileMenu(false)}
+										/>
+									</Tooltip>
+								</div>
 								{tileList}
 							</div>
 						</div>
-					) : (
+					) : dashboardResizeColumn ? (
 						<>
 							{dashboardResizeColumn ? (
 								<div className="dashBoardSideBar">
-									<DashBoardLayoutControl />
+									<DashBoardLayoutControl
+										setDashboardResizeColumn={setDashboardResizeColumn}
+									/>
 								</div>
 							) : null}
 						</>
-					)}
+					) : null}
 				</div>
+			) : null}
+			{showDashBoardFilterMenu ? (
+				<>
+					<div className="dashBoardSideBar">
+						<ChartData
+							tabId={tabTileProps.selectedTabId}
+							tileId={tabTileProps.selectedTileId}
+							screenFrom="Dashboard"
+						></ChartData>
+						<ChartFilterGroupsContainer
+							propKey={"0.0"}
+							fromDashboard={true}
+						></ChartFilterGroupsContainer>
+						{/* <Tooltip title="Hide">
+								<KeyboardArrowUpIcon
+									sx={{
+										fontSize: "16px",
+										float: "right",
+										margin: "16px 0px 5px 8px",
+										color: "grey",
+									}}
+									onClick={() => setShowDashBoardFilter(false)}
+								/>
+							</Tooltip> */}
+					</div>
+				</>
 			) : null}
 		</div>
 	);
 };
 
-const mapStateToProps = (state: DashBoardStateProps, ownProps: any) => {
+const mapStateToProps = (state: DashBoardStateProps & any, ownProps: any) => {
 	return {
+		chartGroup: state.chartFilterGroup,
+		dashBoardGroup: state.dashBoardFilterGroup,
 		tabState: state.tabState,
 		tabTileProps: state.tabTileProps,
 		tileState: state.tileState,
+		pageSettings: state.pageSettings,
 	};
 };
 
@@ -377,13 +583,26 @@ const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 			propIndex: number
 		) => dispatch(updateTabDashDetails(checked, propKey, dashSpecs, tabId, propIndex)),
 
-		toggleGraphSize: (tileKey: number, graphSize: boolean) =>
+		toggleGraphSize: (tileKey: string, graphSize: boolean) =>
 			dispatch(toggleGraphSize(tileKey, graphSize)),
 
-		// graphHighlight: (tabId: number, propKey: number, highlight: boolean | any) =>
-		// 	dispatch(updateGraphHighlight(tabId, propKey, highlight)),
-		// resetHighlight: (tabId: number) => dispatch(resetGraphHighlight(tabId)),
+		graphHighlight: (tabId: number, propKey: string, highlight: boolean | any) =>
+			dispatch(updateGraphHighlight(tabId, propKey, highlight)),
+		resetHighlight: (tabId: number) => dispatch(resetGraphHighlight(tabId)),
 		setGridSize: (gridSize: any) => dispatch(setDashGridSize(gridSize)), //gridSize{ x: null | number | string; y: null | number | string }
+		resetPageSettings: () => dispatch(resetPageSettings()), //gridSize{ x: null | number | string; y: null | number | string }
+
+		updateDashBoardGroups: (groupId: string) => dispatch(updateDashBoardGroups(groupId)),
+		deleteDashBoardSelectedGroup: (groupId: string) =>
+			dispatch(deleteDashBoardSelectedGroup(groupId)),
+		deleteDashBoardSelectedGroupAllTabTiles: (groupId: string) =>
+			dispatch(deleteDashBoardSelectedGroupAllTabTiles(groupId)),
+		addDashBoardFilterGroupTabTiles: (groupId: string) =>
+			dispatch(addDashBoardFilterGroupTabTiles(groupId)),
+		setDashBoardFilterGroupsTabTiles: (groupId: string, selectedTabTiles: any) =>
+			dispatch(setDashBoardFilterGroupsTabTiles(groupId, selectedTabTiles)),
+		deleteDashBoardSelectedTabTiles: (groupId: string, selectedTabTiles: any) =>
+			dispatch(deleteDashBoardSelectedTabTiles(groupId, selectedTabTiles)),
 	};
 };
 export default connect(mapStateToProps, mapDispatchToProps)(DashBoard);

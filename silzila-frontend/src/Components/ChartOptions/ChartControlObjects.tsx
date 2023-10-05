@@ -3,19 +3,28 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import { changeChartOptionSelected } from "../../redux/ChartPoperties/ChartPropertiesActions";
 import { chartTypes } from "./ChartTypes";
+import { changeDynamicMeasureOption } from "../../redux/DynamicMeasures/DynamicMeasuresActions";
 
 const ChartControlObjects = ({
 	// state
 	chartProp,
 	tabTileProps,
+	dynamicMeasureState,
 
 	// dispatch
 	changeChartOption,
+	changeDynamicMeasureOption,
 }: any) => {
 	var propKey = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
 	var selectedChart = chartProp.properties[propKey].chartType;
 
-	const richTextOptionList: string[] = ["Title"];
+	var selectedDynamicMeasureProps =
+		dynamicMeasureState.dynamicMeasureProps?.[`${dynamicMeasureState.selectedTabId}`]?.[
+			`${dynamicMeasureState.selectedTileId}`
+		]?.[
+			`${dynamicMeasureState.selectedTileId}.${dynamicMeasureState.selectedDynamicMeasureId}`
+		];
+	const richTextOptionList: string[] = ["Format", "Style", "Conditional Formatting"];
 
 	const barOptionsList: string[] = [
 		"Title",
@@ -51,6 +60,7 @@ const ChartControlObjects = ({
 	const gaugeOptionList: string[] = ["Title", "Margin", "Axis", "Tooltip", "Colors", "Format"];
 	const heatmapOptionList: string[] = [
 		"Title",
+		"Legend",
 		"Labels",
 		"Margin",
 		"Colors",
@@ -61,6 +71,7 @@ const ChartControlObjects = ({
 	const crossTabOptionList: string[] = ["Title", "Tooltip", "Style", "Format"];
 	const boxPlotOptionsList: string[] = [
 		"Title",
+		"Legend",
 		"Tooltip",
 		"Margin",
 		"Colors",
@@ -77,6 +88,14 @@ const ChartControlObjects = ({
 		// "Format",
 		"Style",
 	];
+	const simpleCardOptionList: string[] = ["Title", "Colors", "Format", "Style"];
+	const tableOptionList: string[] = [
+		"Title",
+		"Tooltip",
+		"Style",
+		"Format",
+		"Conditional Formatting",
+	];
 
 	const RenderOptions: any = () => {
 		switch (selectedChart) {
@@ -87,7 +106,7 @@ const ChartControlObjects = ({
 			case "line":
 			case "area":
 			case "scatterPlot":
-			case "stakedArea":
+			case "stackedArea":
 				return barOptionsList.map(option => {
 					return (
 						<div
@@ -223,6 +242,26 @@ const ChartControlObjects = ({
 					);
 				});
 
+			case "table":
+				return tableOptionList.map((option: string, i: number) => {
+					return (
+						<div
+							key={option}
+							className={
+								chartProp.properties[propKey].chartOptionSelected === option
+									? "optionImageSelected"
+									: "optionImage"
+							}
+							style={{
+								textAlign: "center",
+								gridColumn: i === 4 ? "1/span 3" : "auto",
+							}}
+							onClick={() => changeChartOption(propKey, option)}
+						>
+							{option}
+						</div>
+					);
+				});
 			case "crossTab":
 				return crossTabOptionList.map(option => {
 					return (
@@ -240,7 +279,27 @@ const ChartControlObjects = ({
 					);
 				});
 			case "richText":
-				return richTextOptionList.map(option => {
+				return richTextOptionList.map((option: any, i: number) => {
+					return (
+						<div
+							key={option}
+							className={
+								selectedDynamicMeasureProps?.chartOptionSelected === option
+									? "optionImageSelected"
+									: "optionImage"
+							}
+							style={{
+								textAlign: "center",
+								gridColumn: i === 2 ? "1/span 3" : "auto",
+							}}
+							onClick={() => changeDynamicMeasureOption(option)}
+						>
+							{option}
+						</div>
+					);
+				});
+			case "simplecard":
+				return simpleCardOptionList.map(option => {
 					return (
 						<div
 							key={option}
@@ -274,13 +333,18 @@ const ChartControlObjects = ({
 };
 
 const mapStateToProps = (state: any) => {
-	return { chartProp: state.chartProperties, tabTileProps: state.tabTileProps };
+	return {
+		chartProp: state.chartProperties,
+		tabTileProps: state.tabTileProps,
+		dynamicMeasureState: state.dynamicMeasuresState,
+	};
 };
 
 const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 	return {
-		changeChartOption: (propKey: number | string, chartOption: string) =>
+		changeChartOption: (propKey: string, chartOption: string) =>
 			dispatch(changeChartOptionSelected(propKey, chartOption)),
+		changeDynamicMeasureOption: (value: string) => dispatch(changeDynamicMeasureOption(value)),
 	};
 };
 

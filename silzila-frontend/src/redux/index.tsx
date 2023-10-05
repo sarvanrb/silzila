@@ -11,6 +11,10 @@ import tabStateReducer from "./TabTile/TabState";
 import tileStateReducer from "./TabTile/TileState";
 import tabTilePropsReducer from "./TabTile/TabTileProps";
 import FlatFileReducer from "./FlatFile/FlatFileState";
+import DownloadPageSettingReducer from "./PageSettings/DownloadPageSettingState";
+import chartFilterGroupReducer from "./ChartFilterGroup/ChartFilterGroupState";
+import DynamicMeasureReducer from "./DynamicMeasures/DynamicMeasureState";
+import dashBoardFilterGroupReducer from './DashBoardFilterGroup/DashBoardFilterGroupState';
 
 const allReducers = combineReducers({
 	isLogged: loggedReducer,
@@ -25,6 +29,10 @@ const allReducers = combineReducers({
 	sampleRecords: SampleRecordsReducer,
 	playBookState: PlayBookReducer,
 	flatFileState: FlatFileReducer,
+	pageSettings: DownloadPageSettingReducer,
+	chartFilterGroup: chartFilterGroupReducer,
+	dynamicMeasuresState: DynamicMeasureReducer,
+	dashBoardFilterGroup: dashBoardFilterGroupReducer
 });
 
 export default allReducers;

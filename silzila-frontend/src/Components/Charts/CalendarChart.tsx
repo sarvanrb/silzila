@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import { ChartControlsProps } from "../../redux/ChartPoperties/ChartControlsInterface";
 import { ColorSchemes } from "../ChartOptions/Color/ColorScheme";
-import { ChartsMapStateToProps, ChartsReduxStateProps } from "./ChartsCommonInterfaces";
+import {
+	ChartDataFieldProps,
+	ChartsMapStateToProps,
+	ChartsReduxStateProps,
+} from "./ChartsCommonInterfaces";
 
 const CalendarChart = ({
 	//props
@@ -23,7 +27,6 @@ const CalendarChart = ({
 	var chartControl: ChartControlsProps = chartControls.properties[propKey];
 
 	let chartData: any[] = chartControl.chartData ? chartControl.chartData : [];
-	console.log(chartData);
 
 	const [calendarArray, setCalendarArray] = useState<any[]>([]);
 	const [seriesArray, setSeriesArray] = useState<any[]>([]);
@@ -31,15 +34,40 @@ const CalendarChart = ({
 
 	let inChartHeight: number;
 
+	const [maxValue, setMaxValue] = useState<number>(0);
+	const [minValue, setMinValue] = useState<number>(0);
+
 	useEffect(() => {
 		if (chartData.length >= 1) {
 			if (chartProperties.properties[propKey].chartAxes[1].fields.length > 0) {
 				setChartDataKeys(Object.keys(chartData[0]));
 
-				console.log(chartProperties.properties[propKey].chartAxes[1].fields[0]);
 				let objKey = `${chartProperties.properties[propKey].chartAxes[1].fields[0].timeGrain} of ${chartProperties.properties[propKey].chartAxes[1].fields[0].fieldname}`;
 
-				// console.log(objKey, chartData);
+
+				var measureField: ChartDataFieldProps =
+					chartProperties.properties[propKey].chartAxes[2].fields[0];
+				if (measureField) {
+					var maxFieldName: string = "";
+					if ("timeGrain" in measureField) {
+						maxFieldName = `${measureField.timeGrain} of ${measureField.fieldname}`;
+					} else {
+						maxFieldName = `${measureField.agg} of ${measureField.fieldname}`;
+					}
+
+					var max: number = 0;
+					var min: number = 100000000;
+					chartData.forEach((element: any) => {
+						if (element[maxFieldName] > max) {
+							max = element[maxFieldName];
+						}
+						if (element[maxFieldName] < min) {
+							min = element[maxFieldName];
+						}
+					});
+					setMaxValue(max);
+					setMinValue(min);
+				}
 
 				// getting years of dates
 				chartData.map((el: any) => {
@@ -114,12 +142,9 @@ const CalendarChart = ({
 				});
 				setSeriesArray(seriesArrayValues);
 
-				// console.log((graphDimension.height * 80) / 100);
 				// //ind chart height
-				// console.log((graphDimension.height * 80) / 100 / uniqueYears.length);
 				// inChartHeight = (graphDimension.height * 80) / 100 / uniqueYears.length;
 				// //chart gap
-				// console.log((graphDimension.height * 20) / 100 / (uniqueYears.length - 1));
 			}
 		}
 	}, [chartControl, chartControl.chartData]);
@@ -136,7 +161,6 @@ const CalendarChart = ({
 			}
 		});
 
-		// console.log(virtualData);
 		return virtualData;
 	}
 
@@ -174,7 +198,12 @@ const CalendarChart = ({
 
 					visualMap: {
 						type: chartControl.calendarStyleOptions.pieceWise ? "piecewise" : null,
-						show: chartControl.legendOptions?.showLegend,
+						show:
+							graphDimension.height > 180
+								? chartData.length >= 1
+									? chartControl.legendOptions?.showLegend
+									: false
+								: false,
 						itemHeight: chartControl.calendarStyleOptions?.height,
 						itemWidth: chartControl.calendarStyleOptions?.width,
 						itemGap: chartControl.legendOptions?.itemGap,
@@ -182,8 +211,25 @@ const CalendarChart = ({
 						left: chartControl.legendOptions?.position?.left,
 						top: chartControl.legendOptions?.position?.top,
 						orient: chartControl.calendarStyleOptions?.orientation,
-						min: 200,
-						max: 10000,
+						min:
+							chartControl.colorScale.colorScaleType === "Manual"
+								? chartControl.colorScale.min !== parseInt("")
+									? chartControl.colorScale.min
+									: 0
+								: minValue,
+						max:
+							chartControl.colorScale.colorScaleType === "Manual"
+								? chartControl.colorScale.max !== parseInt("")
+									? chartControl.colorScale.max
+									: 0
+								: maxValue,
+
+						inRange: {
+							color: [
+								chartControl.colorScale.minColor,
+								chartControl.colorScale.maxColor,
+							],
+						},
 					},
 
 					calendar: calendarArray,

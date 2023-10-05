@@ -30,7 +30,6 @@ const Sankey = ({
 	useEffect(() => {
 		if (chartData.length >= 1) {
 			dimensionsKeys = chartProperties.properties[propKey].chartAxes[1].fields.map(el => {
-				console.log(el);
 				if ("timeGrain" in el) {
 					return `${el.timeGrain} of ${el.fieldname}`;
 				} else if ("agg" in el) {
@@ -70,11 +69,21 @@ const Sankey = ({
 							position:
 								chartControl.sankeyControls.labelPosition === "inside"
 									? i / 2 === 0
-										? [30 + chartControl.sankeyControls.labelDistance, 50]
-										: [-8 - chartControl.sankeyControls.labelDistance, 50]
+										? [30 + chartControl.sankeyControls.labelDistance, 10]
+										: [
+												-70 -
+													2 *
+														(chartControl.sankeyControls.labelDistance /
+															2),
+												10,
+										  ]
 									: i / 2 === 0
-									? [-8 - chartControl.sankeyControls.labelDistance, 50]
-									: [30 + chartControl.sankeyControls.labelDistance, 50],
+									? [
+											-70 -
+												2 * (chartControl.sankeyControls.labelDistance / 2),
+											10,
+									  ]
+									: [30 + chartControl.sankeyControls.labelDistance, 10],
 							show: chartControl.labelOptions.showLabel,
 							fontSize: chartControl.labelOptions.fontSize,
 							color: chartControl.labelOptions.labelColorManual
@@ -84,6 +93,7 @@ const Sankey = ({
 							overflow: chartControl.sankeyControls.overFlow,
 							distance: chartControl.sankeyControls.labelDistance,
 							rotate: chartControl.sankeyControls.labelRotate,
+							verticalAlign: "top",
 						},
 						itemStyle: {
 							color:
@@ -123,7 +133,6 @@ const Sankey = ({
 				});
 			}
 
-			console.log(valuesOfLink);
 			setLinks(valuesOfLink);
 		}
 	}, [chartData, chartControl]);

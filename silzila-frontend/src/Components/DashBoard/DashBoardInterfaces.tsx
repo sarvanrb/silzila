@@ -6,13 +6,18 @@ export interface DashBoardProps {
 	//props
 	showListofTileMenu: boolean;
 	dashboardResizeColumn: boolean;
+	showDashBoardFilterMenu: boolean;
+
 	//state
+	chartGroup: any;
+	dashBoardGroup: any;
 	tabState: TabStateProps;
 	tabTileProps: TabTileStateProps;
 	tileState: TileStateProps;
+	pageSettings: any;
 
 	// Dispatch
-	toggleGraphSize: (tileKey: number, graphSize: boolean) => void;
+	toggleGraphSize: (tileKey: string, graphSize: boolean) => void;
 	resetHighlight: (tabId: number) => void;
 	setGridSize: (gridSize: any) => void;
 	graphHighlight: (tabId: number, propKey: string, highlight: boolean | any) => void;
@@ -23,6 +28,16 @@ export interface DashBoardProps {
 		tabId: number,
 		propIndex: number
 	) => void;
+	setShowListofTileMenu: (value: boolean) => void;
+	setDashboardResizeColumn: (value: boolean) => void;
+	setShowDashBoardFilter: (value: boolean) => void;
+	resetPageSettings: () => void; //gridSize{ x: null | number | string; y: null | number | string }
+	updateDashBoardGroups: (groupId: string) => void;
+	deleteDashBoardSelectedGroup: (groupId: string) => void;
+	deleteDashBoardSelectedGroupAllTabTiles: (groupId: string) => void;
+	addDashBoardFilterGroupTabTiles: (groupId: string) => void;
+	setDashBoardFilterGroupsTabTiles: (groupId: string, selectedTabTiles: any) => void;
+	deleteDashBoardSelectedTabTiles: (groupId: string, selectedTabTiles: any) => void;
 }
 
 export type DashBoardStateProps = TabStateProps2 & TabTileStateProps2 & TileStateProps2;

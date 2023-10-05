@@ -19,6 +19,7 @@ import { resetAllStates } from "../../redux/TabTile/TabTileActionsAndMultipleDis
 import AddIcon from "@mui/icons-material/Add";
 import StorageOutlinedIcon from "@mui/icons-material/StorageOutlined";
 import { AlertColor } from "@mui/material/Alert";
+import Logger from "../../Logger";
 
 const initialState = {
 	vendor: "",
@@ -35,6 +36,8 @@ const initialState = {
 	connectionNameError: "",
 	password: "",
 	passwordError: "",
+	httppath: "",
+	httppathError:"",
 };
 
 const DataConnection = (props: DataConnectionProps) => {
@@ -64,12 +67,11 @@ const DataConnection = (props: DataConnectionProps) => {
 		});
 
 		if (result.status) {
-			//console.log("dc");
-
+			
 			setDataConnectionList(result.data);
 			props.setDataConnectionListToState(result.data);
 		} else {
-			// //console.log("result.data.detail");
+			Logger("error", result.data.detail);
 		}
 	};
 
@@ -77,10 +79,10 @@ const DataConnection = (props: DataConnectionProps) => {
 
 	//=============== set Mode ===============================
 	// TODO:need to specify types
-	const handleMode = (e: any) => {
-		if (e.target.value === "New") {
+	const handleMode = (mode: string) => {
+		if (mode === "New") {
 			setRegOrUpdate("Register");
-		} else if (e.target.value === "Edit") {
+		} else if (mode === "Edit") {
 			setAccount({ ...account, password: "" });
 			setRegOrUpdate("Update");
 		}
@@ -107,8 +109,6 @@ const DataConnection = (props: DataConnectionProps) => {
 	// when Visibility icon Clicked
 	// ==================================================
 	const ViewOrEditDc = async (dcuid: string) => {
-		//console.log("click");
-
 		setDataConnId(dcuid);
 		// TODO need to specify type
 		var result: any = await FetchData({
@@ -117,14 +117,13 @@ const DataConnection = (props: DataConnectionProps) => {
 			url: "database-connection/" + dcuid,
 			headers: { Authorization: `Bearer ${props.token}` },
 		});
-		//console.log(result);
 
 		if (result.status) {
 			setAccount({ ...result.data, password: "*******" });
 			setShowForm(true);
 			setViewMode(true);
 		} else {
-			// //console.log(result.data.detail);
+			Logger("error", result.data.detail);
 		}
 	};
 
@@ -133,15 +132,19 @@ const DataConnection = (props: DataConnectionProps) => {
 	//  ==============================================================
 
 	const handleRegister = async () => {
-		var data = {
+		var data:any = {
 			vendor: account.vendor,
 			server: account.server,
 			port: account.port,
 			database: account.database,
-			username: account.username,
 			password: account.password,
 			connectionName: account.connectionName,
 		};
+		if(account.vendor === "databricks"){
+           data.httppath = account.httppath;
+		}else{
+			data.username = account.username;
+		}
 		// TODO need to specify type
 		var response: any = await FetchData({
 			requestType: "withData",
@@ -159,6 +162,7 @@ const DataConnection = (props: DataConnectionProps) => {
 				});
 			} else {
 				setOpenAlert(true);
+				setSeverity("success");
 				setTestMessage("Data Connection successful");
 				getInformation();
 				setTimeout(() => {
@@ -169,7 +173,7 @@ const DataConnection = (props: DataConnectionProps) => {
 				}, 3000);
 			}
 		} else {
-			// //console.log(response);
+			Logger("error", response);
 		}
 	};
 
@@ -177,15 +181,19 @@ const DataConnection = (props: DataConnectionProps) => {
 	// Update Dc
 	// ==============================================================
 	const handleonUpdate = async () => {
-		var data = {
+		var data:any = {
 			vendor: account.vendor,
 			server: account.server,
 			port: account.port,
 			database: account.database,
-			username: account.username,
 			password: account.password,
 			connectionName: account.connectionName,
 		};
+		if(account.vendor === "databricks"){
+			data.httppath = account.httppath;
+		 }else{
+			 data.username = account.username;
+		 }
 		// TODO need to specify type
 		var response: any = await FetchData({
 			requestType: "withData",
@@ -206,14 +214,13 @@ const DataConnection = (props: DataConnectionProps) => {
 				getInformation();
 			}, 3000);
 		} else {
-			// //console.log("Update Dc error", response);
 			setSeverity("error");
 			setOpenAlert(true);
 			setTestMessage(response.data.detail);
-			setTimeout(() => {
-				setOpenAlert(false);
-				setTestMessage("");
-			}, 3000);
+			// setTimeout(() => {
+			// 	setOpenAlert(false);
+			// 	setTestMessage("");
+			// }, 3000);
 		}
 	};
 
@@ -245,20 +252,21 @@ const DataConnection = (props: DataConnectionProps) => {
 			<div className="containersHead">
 				<div className="containerTitle">
 					<StorageOutlinedIcon style={{ marginRight: "10px", color: " #2bb9bb" }} />
-					Data Connections
+					DB Connections
 				</div>
 				<div
 					className="containerButton"
 					onClick={(e: any) => {
-						handleMode(e);
+						Logger("info", "add new connection");
+						handleMode("New");
 						showAndHideForm();
 					}}
-					title="Create New DataConnection"
+					title="Create New DB Connection"
 				>
 					<AddIcon />
 				</div>
 			</div>
-			<div className="connectionListContainer">
+			<div className="listContainer">
 				{dataConnectionList &&
 					dataConnectionList.map((dc: ConnectionItem) => {
 						return (

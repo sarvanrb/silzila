@@ -3,21 +3,26 @@ package org.silzila.app.querybuilder.filteroptions;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.silzila.app.AppApplication;
 import org.silzila.app.exception.BadRequestException;
 import org.silzila.app.payload.request.ColumnFilter;
 import org.silzila.app.payload.request.Table;
 
-public class FilterQuerySpark {
+public class FilterQueryDatabricks {
+
+    private static final Logger logger = LogManager.getLogger(FilterQueryDatabricks.class);
 
     public static String getFilterOptions(ColumnFilter req, Table table) throws BadRequestException {
-        System.out.println("=========== FilterQuerySpark fn calling...");
+        logger.info("=========== FilterQueryDatabricks fn calling...");
         /*
          * ************************************************
          * get distinct values - binary, text
          * ************************************************
          */
         String query = "";
-        String fromClause = " FROM vw_" + table.getAlias() + "_" + table.getFlatFileId().substring(0, 8) + " ";
+        String fromClause = " FROM " + table.getDatabase() + ".`" + table.getSchema() + "`." + table.getTable() + " ";
 
         if (List.of("TEXT", "BOOLEAN").contains(req.getDataType().name())) {
             query = "SELECT DISTINCT " + req.getFieldName() + fromClause + "ORDER BY 1";

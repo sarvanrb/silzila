@@ -3,6 +3,9 @@ package org.silzila.app.querybuilder.filteroptions;
 import java.util.stream.Collectors;
 import java.util.Objects;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.silzila.app.AppApplication;
 import org.silzila.app.domain.QueryClauseFieldListMap;
 import org.silzila.app.dto.DatasetDTO;
 import org.silzila.app.exception.BadRequestException;
@@ -14,12 +17,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class FilterOptionsQueryComposer {
 
+    private static final Logger logger = LogManager.getLogger(FilterOptionsQueryComposer.class);
+
     /*
      * Builds query for the dropped column into a filter
      * Query result are the unique values of the selected column.
      */
     public String composeQuery(ColumnFilter cf, DatasetDTO ds, String vendorName) throws BadRequestException {
-        System.out.println("----------- FilterOptionsQueryComposer calling......");
+        logger.info("----------- FilterOptionsQueryComposer calling......");
         String finalQuery = "";
 
         /*
@@ -43,19 +48,24 @@ public class FilterOptionsQueryComposer {
             throw new BadRequestException("Error: RequestedFiter Column is not available in Dataset!");
         }
 
-        if (vendorName.equals("postgresql")) {
-            System.out.println("------ inside postges block");
+        if (vendorName.equals("postgresql") || vendorName.equals("redshift")) {
+            logger.info("------ inside postges/redshift block");
             finalQuery = FilterQueryPostgres.getFilterOptions(cf, table);
         } else if (vendorName.equals("mysql")) {
-            System.out.println("------ inside mysql block");
+            logger.info("------ inside mysql block");
             finalQuery = FilterQueryMysql.getFilterOptions(cf, table);
         } else if (vendorName.equals("sqlserver")) {
-            System.out.println("------ inside sql server block");
+            logger.info("------ inside sql server block");
             finalQuery = FilterQuerySqlserver.getFilterOptions(cf, table);
-        } else if (vendorName.equals("spark")) {
-            System.out.println("------ inside spark block");
-            finalQuery = FilterQuerySpark.getFilterOptions(cf, table);
-        } else {
+        } else if (vendorName.equals("databricks")) {
+            logger.info("------ inside databricks block");
+            finalQuery = FilterQueryDatabricks.getFilterOptions(cf, table);
+        } else if (vendorName.equals("duckdb")) {
+            logger.info("------ inside duckdb block");
+            finalQuery = FilterQueryDuckDb.getFilterOptions(cf, table);
+        }
+
+        else {
             throw new BadRequestException("Error: DB vendor Name is wrong!");
         }
 

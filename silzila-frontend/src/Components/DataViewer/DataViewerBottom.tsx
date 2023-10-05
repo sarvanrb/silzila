@@ -35,6 +35,7 @@ import {
 	setTablesForSelectedDataSets,
 } from "../../redux/TabTile/TabTileActionsAndMultipleDispatches";
 import { IndChartPropProperties } from "../../redux/ChartPoperties/ChartPropertiesInterfaces";
+import Logger from "../../Logger";
 
 export const getTableData = async (dc_uid: string, tableObj: any, token: string) => {
 	var database: string = tableObj.database;
@@ -57,7 +58,7 @@ export const getTableData = async (dc_uid: string, tableObj: any, token: string)
 	if (res.status) {
 		return res.data;
 	} else {
-		console.log("Get Table Data Error", res);
+		Logger("info", "Get Table Data Error", res);
 	}
 };
 
@@ -93,7 +94,7 @@ export const getColumnTypes = async (dc_uid: string, tableObj: any, token: strin
 		}
 		return finalResult;
 	} else {
-		console.log("Get Table ColumnsType Error", res);
+		Logger("info", "Get Table ColumnsType Error", res);
 	}
 };
 
@@ -174,7 +175,6 @@ const DataViewerBottom = ({
 		if (result.status) {
 			return result.data;
 		} else {
-			// console.log(result.data.detail);
 		}
 	};
 
@@ -278,7 +278,6 @@ const DataViewerBottom = ({
 
 	const onChangeOrAddDataset = () => {
 		let tabObj = tabState.tabs[tabTileProps.selectedTabId];
-		console.log(tabTileProps.selectedTable);
 
 		addTile(
 			tabObj.tabId,
@@ -295,7 +294,7 @@ const DataViewerBottom = ({
 			var dsObj = tabTileProps.selectedDataSetList.filter(
 				(ds: any) => ds.id === addNewOrChooseExistingDS
 			)[0];
-			setSelectedDs(parseFloat(`${tabObj.tabId}.${tabObj.nextTileId}`), dsObj);
+			setSelectedDs(`${tabObj.tabId}.${tabObj.nextTileId}`, dsObj);
 		}
 	};
 	return (
@@ -446,9 +445,9 @@ const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 	return {
 		setSelectedDataSetList: (dataset: string) => dispatch(setSelectedDataSetList(dataset)),
 		setTablesForDs: (tablesObj: any) => dispatch(setTablesForSelectedDataSets(tablesObj)),
-		setSelectedDs: (propKey: number | string, selectedDs: any) =>
+		setSelectedDs: (propKey: string, selectedDs: any) =>
 			dispatch(setSelectedDsInTile(propKey, selectedDs)),
-		setSelectedTable: (propKey: number | string, selectedTable: any) =>
+		setSelectedTable: (propKey: string, selectedTable: any) =>
 			dispatch(setSelectedTableInTile(propKey, selectedTable)),
 		addRecords: (id: string, tableId: string, tableRecords: any, columnType: any) =>
 			dispatch(addTableRecords(id, tableId, tableRecords, columnType)),

@@ -6,15 +6,18 @@ const initialProperties = {
 	selectedTabId: 1,
 	nextTabId: 2,
 	editTabName: false,
+	previousTabId: 1,
 
 	selectedTileName: "Tile - 1",
 	selectedTileId: 1,
 	nextTileId: 2,
 	editTileName: false,
+	previousTileId: 1,
 
 	dragging: false,
 	chartPropUpdated: false,
 	showDash: false,
+	isDashboardTileSwitched: false,
 	dashMode: "Edit",
 	dashGridSize: { x: null, y: null },
 
@@ -50,6 +53,8 @@ const tabTilePropsReducer = (state: TabTileStateProps = initialProperties, actio
 		case "SELECTED_TILE":
 			return {
 				...state,
+				previousTabId: state.selectedTabId,
+				previousTileId: state.selectedTileId,
 				selectedTileName: action.payload.tileName,
 				selectedTileId: action.payload.tileId,
 				nextTileId: action.payload.nextTileId,
@@ -68,8 +73,19 @@ const tabTilePropsReducer = (state: TabTileStateProps = initialProperties, actio
 			return { ...state, chartPropUpdated: action.payload };
 
 		case "SHOW_DASHBOARD":
-			return { ...state, showDash: action.payload };
+			let prevTile = 0, prevTab = 0;
 
+			if(!state.showDash && !action.payload)
+			{
+				prevTile = state.previousTileId;
+				prevTab  = state.previousTabId;
+			}
+		
+			return { ...state, previousTileId:prevTile, previousTabId:prevTab, isDashboardTileSwitched: true, showDash: action.payload };
+
+		case "SET_DASH_TILE_SWITCHED":
+			return { ...state, isDashboardTileSwitched: action.payload };
+		
 		case "SET_DASH_GRID_SIZE":
 			return { ...state, dashGridSize: action.payload };
 

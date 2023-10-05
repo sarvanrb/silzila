@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.silzila.app.AppApplication;
 import org.silzila.app.domain.QueryClauseFieldListMap;
 import org.silzila.app.exception.BadRequestException;
 import org.silzila.app.helper.AilasMaker;
@@ -14,11 +17,13 @@ import org.silzila.app.payload.request.Dimension;
 import org.silzila.app.payload.request.Measure;
 import org.silzila.app.payload.request.Query;
 
-public class SelectClauseSpark {
+public class SelectClauseDatabricks {
 
-    /* SELECT clause for Spark dialect */
+    private static final Logger logger = LogManager.getLogger(SelectClauseDatabricks.class);
+
+    /* SELECT clause for Databricks dialect */
     public static QueryClauseFieldListMap buildSelectClause(Query req) throws BadRequestException {
-        System.out.println("SelectClauseSpark calling ***********");
+        logger.info("SelectClauseDatabricks calling ***********");
 
         List<String> selectList = new ArrayList<>();
         List<String> selectDimList = new ArrayList<>();

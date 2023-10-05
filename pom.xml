@@ -4,18 +4,24 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.2</version>
+        <version>2.7.14</version>
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.silzila</groupId>
-    <artifactId>app</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>silzila</artifactId>
+    <version>v0.2.0</version>
     <name>app</name>
     <description>Data Visualization App</description>
     <properties>
         <java.version>17</java.version>
     </properties>
     <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -39,15 +45,17 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
-            <version>2.7.2</version>
+            <version>2.7.14</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.h2database/h2 -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>2.1.214</version>
+            <version>2.2.222</version>
             <scope>compile</scope>
         </dependency>
+
+
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -76,7 +84,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.4.1</version>
+            <version>42.5.4</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
         <dependency>
@@ -115,8 +123,9 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20220320</version>
+            <version>20230618</version>
         </dependency>
+
 
         <!-- https://mvnrepository.com/artifact/com.vladmihalcea/hibernate-types-60 -->
         <dependency>
@@ -125,27 +134,110 @@
             <version>2.20.0</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.apache.spark/spark-core -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.13</artifactId>
-            <version>3.3.1</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.spark/spark-sql -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.13</artifactId>
-            <version>3.3.1</version>
-            <scope>provided</scope>
-        </dependency>
-
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
 			<artifactId>janino</artifactId>
 			<version>3.0.16</version>
-		</dependency>        
+		</dependency>   
 
+    <!-- Manual addition of BigQuery Driver -->
+        <!-- <dependency>
+            <groupId>com.google.bigquery</groupId>
+            <artifactId>bigquery-jdbc</artifactId>
+            <version>42</version>
+        </dependency>   -->
+
+    <!-- dependency for Bigquery driver -->
+
+    <!-- https://mvnrepository.com/artifact/com.google.cloud/google-cloud-bigquery -->
+    <dependency>
+        <groupId>com.google.cloud</groupId>
+        <artifactId>google-cloud-bigquery</artifactId>
+        <version>2.26.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.google.http-client/google-http-client -->
+    <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client</artifactId>
+        <version>1.43.2</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.google.auth/google-auth-library-credentials -->
+    <dependency>
+        <groupId>com.google.auth</groupId>
+        <artifactId>google-auth-library-credentials</artifactId>
+        <version>1.17.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.google.auth/google-auth-library-oauth2-http -->
+    <dependency>
+        <groupId>com.google.auth</groupId>
+        <artifactId>google-auth-library-oauth2-http</artifactId>
+        <version>1.17.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.google.api-client/google-api-client -->
+    <dependency>
+        <groupId>com.google.api-client</groupId>
+        <artifactId>google-api-client</artifactId>
+        <version>2.2.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
+    <dependency>
+        <groupId>com.googlecode.json-simple</groupId>
+        <artifactId>json-simple</artifactId>
+        <version>1.1.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.amazon.redshift/redshift-jdbc42 -->
+    <dependency>
+        <groupId>com.amazon.redshift</groupId>
+        <artifactId>redshift-jdbc42</artifactId>
+        <version>2.1.0.15</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.duckdb</groupId>
+        <artifactId>duckdb_jdbc</artifactId>
+        <version>0.8.1</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.databricks/databricks-jdbc -->
+    <dependency>
+        <groupId>com.databricks</groupId>
+        <artifactId>databricks-jdbc</artifactId>
+        <version>2.6.33</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
+    <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-api</artifactId>
+        <version>2.20.0</version>
+    </dependency>
+	<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+    <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-core</artifactId>
+        <version>2.20.0</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+        <exclusions>
+            <exclusion>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-logging</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency> 
+    <!-- https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j -->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jul-to-slf4j</artifactId>
+        <version>2.0.7</version>
+    </dependency>
 
     </dependencies>
 

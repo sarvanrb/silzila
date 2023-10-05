@@ -29,7 +29,7 @@ const ColorScale = ({
 	// dispatch
 	setColorScaleOption,
 }: ChartOptionsProps & {
-	setColorScaleOption: (option: string, value: any, propKey: string | number) => void;
+	setColorScaleOption: (option: string, value: any, propKey: string) => void;
 }) => {
 	var propKey: string = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
 
@@ -62,26 +62,23 @@ const ColorScale = ({
 	};
 
 	const checkMinMaxValue = () => {
-		console.log(min, max);
-		console.log(typeof min, typeof max);
-		console.log(Number(min), Number(max));
 		if (Number(max) === 0) {
 			setOpenAlert(true);
 			setSeverity("error");
 			setTestMessage("Max value can't be zero");
-			setTimeout(() => {
-				setOpenAlert(false);
-				setTestMessage("");
-			}, 3000);
+			// setTimeout(() => {
+			// 	setOpenAlert(false);
+			// 	setTestMessage("");
+			// }, 3000);
 		} else {
 			if (Number(min) >= Number(max)) {
 				setOpenAlert(true);
 				setSeverity("error");
 				setTestMessage("Max value should be grater than Min");
-				setTimeout(() => {
-					setOpenAlert(false);
-					setTestMessage("");
-				}, 3000);
+				// setTimeout(() => {
+				// 	setOpenAlert(false);
+				// 	setTestMessage("");
+				// }, 3000);
 			}
 		}
 	};
@@ -174,7 +171,6 @@ const ColorScale = ({
 								type="number"
 								value={min}
 								onChange={e => {
-									//console.log(e.target.value);
 									setColorScaleOption("min", e.target.value, propKey);
 								}}
 								label="Min"
@@ -186,7 +182,6 @@ const ColorScale = ({
 								type="number"
 								value={max}
 								onChange={e => {
-									//console.log(e.target.value);
 									setColorScaleOption("max", e.target.value, propKey);
 								}}
 								label="Max"
@@ -245,7 +240,7 @@ const mapStateToProps = (state: ChartOptionsStateProps, ownProps: any) => {
 
 const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 	return {
-		setColorScaleOption: (option: string, value: any, propKey: string | number) =>
+		setColorScaleOption: (option: string, value: any, propKey: string) =>
 			dispatch(setColorScaleOption(option, value, propKey)),
 	};
 };

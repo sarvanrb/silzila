@@ -14,6 +14,9 @@ import {
 import IndividualTile from "./IndividualTile";
 import { TileRibbonProps, TileRibbonStateProps } from "./TileRibbonInterfaces";
 import AddIcon from "@mui/icons-material/Add";
+import {addChartFilterTabTileName} from '../../redux/ChartFilterGroup/ChartFilterGroupStateActions';
+import Logger from "../../Logger";
+
 
 const TileRibbon = ({
 	// state
@@ -22,6 +25,7 @@ const TileRibbon = ({
 	tileState,
 	tableData,
 	chartProp,
+	chartGroup,
 
 	// dispatch
 	addTile,
@@ -29,7 +33,19 @@ const TileRibbon = ({
 	enableRenameTile,
 	completeRenameTile,
 	removeTile,
+	addChartFilterTabTileName
 }: TileRibbonProps) => {
+
+	const addReportFilterGroup = (nextPropKey:string)=>{
+		var propKey: string = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
+		let selectedFilterGroups = chartGroup.tabTile[propKey] || [];
+		let selectedDatasetID = chartProp.properties[propKey].selectedDs.id;
+
+	///	if (!(selectedFilterGroups && selectedFilterGroups.length > 0)) {
+			addChartFilterTabTileName(selectedDatasetID, nextPropKey);
+	///	}
+	}
+
 	// adding new tile information to store
 	const handleAddTile = () => {
 		let tabObj = tabState.tabs[tabTileProps.selectedTabId];
@@ -43,6 +59,9 @@ const TileRibbon = ({
 			chartProp.properties[propKey].selectedDs,
 			chartProp.properties[propKey].selectedTable
 		);
+	
+		addReportFilterGroup(`${tabObj.tabId}.${tabObj.nextTileId}`);
+		
 	};
 
 	const handleSelectTile = (tileId: number, tileName: string, tabId: number, tabName: string) => {
@@ -76,26 +95,25 @@ const TileRibbon = ({
 
 		let prevSelectedTile = tabTileProps.selectedTileId;
 		if (tileId === prevSelectedTile) {
-			console.log("case 1");
+			Logger("info", "case 1");
 			// handle selecting a new tile
 			let nextTileId = tabTileProps.nextTileId;
 			if (numTiles === 1) {
-				console.log("case 1.1");
+				Logger("info", "case 1.1");
 				handleAddTile();
 				removeTile(tabId, tileId, tileIndex);
 			} else {
-				console.log("case 1.2");
+				Logger("info", "case 1.2");
 				// if there are more than one tiles
 				let selectedTileName = "";
 				let selectedTileId = 0;
 
 				if (tileIndex !== 0) {
-					console.log("case 1.2.1");
+					Logger("info", "case 1.2.1");
 					let newTileKey: string = tilesForSelectedTab[tileIndex - 1];
 					let newTileObj = tileState.tiles[newTileKey];
 					selectedTileName = newTileObj.tileName;
 					selectedTileId = newTileObj.tileId;
-					console.log(newTileKey, newTileObj, selectedTileName, selectedTileId);
 					let propKey: string = `${tabId}.${tileId}`;
 					let chartObj: any = chartProp.properties[propKey];
 
@@ -109,7 +127,7 @@ const TileRibbon = ({
 					);
 					removeTile(tabId, tileId, tileIndex);
 				} else {
-					console.log("case 1.2.2");
+					Logger("info", "case 1.2.2");
 					let newTileKey: string = tilesForSelectedTab[tileIndex + 1];
 					let newTileObj = tileState.tiles[newTileKey];
 					selectedTileName = newTileObj.tileName;
@@ -129,8 +147,6 @@ const TileRibbon = ({
 				}
 				// let propKey: string = `${tabId}.${tileId}`;
 				// let chartObj: any = chartProp.properties[propKey];
-				// console.log(chartObj);
-
 				// selectTile(
 				// 	tabId,
 				// 	selectedTileName,
@@ -141,7 +157,7 @@ const TileRibbon = ({
 				// );
 			}
 		} else {
-			console.log("case 2");
+			Logger("info", "case 2");
 			removeTile(tabId, tileId, tileIndex);
 		}
 	};
@@ -191,6 +207,7 @@ const mapStateToProps = (state: TileRibbonStateProps) => {
 		tileState: state.tileState,
 		tableData: state.tableData,
 		chartProp: state.chartProperties,
+		chartGroup : state.chartFilterGroup
 	};
 };
 
@@ -239,7 +256,8 @@ const mapDispatchToProps = (dispatch: Dispatch<any>) => {
 
 		removeTile: (tabId: number, tileId: number, tileIndex: number) =>
 			dispatch(actionsToRemoveTile(tabId, tileId, tileIndex)),
-
+		addChartFilterTabTileName: (selectedDatasetID: string, tabTileName: string) =>
+			dispatch(addChartFilterTabTileName(selectedDatasetID, tabTileName)),
 		// showDashBoard: (tabId, showDash) => dispatch(actions.setShowDashBoard(tabId, showDash)),
 	};
 };
