@@ -35,6 +35,7 @@ const ChartControlObjects = ({
 		"Tooltip",
 		"Colors",
 		"Format",
+		"Sort",
 	];
 	const treemapOptionsList: string[] = [
 		"Title",
@@ -44,6 +45,7 @@ const ChartControlObjects = ({
 		"Tooltip",
 		"Colors",
 		"Style",
+		"Sort",
 	];
 
 	const pieOptionsList: string[] = [
@@ -55,9 +57,10 @@ const ChartControlObjects = ({
 		"Tooltip",
 		"Colors",
 		"Format",
+		"Sort",
 	];
-	const funnelOptionList: string[] = ["Title", "Legend", "Margin", "Tooltip", "Colors", "Format"];
-	const gaugeOptionList: string[] = ["Title", "Margin", "Axis", "Tooltip", "Colors", "Format"];
+	const funnelOptionList: string[] = ["Title", "Legend", "Margin", "Tooltip", "Colors", "Format", "Sort",];
+	const gaugeOptionList: string[] = ["Title", "Margin", "Axis", "Tooltip", "Colors", "Format", "Sort",];
 	const heatmapOptionList: string[] = [
 		"Title",
 		"Legend",
@@ -67,8 +70,9 @@ const ChartControlObjects = ({
 		"Grid/Axes",
 		"Tooltip",
 		"Format",
+		"Sort",
 	];
-	const crossTabOptionList: string[] = ["Title", "Tooltip", "Style", "Format"];
+	const crossTabOptionList: string[] = ["Title", "Tooltip", "Style", "Format", "Sort","Conditional Formatting"];
 	const boxPlotOptionsList: string[] = [
 		"Title",
 		"Legend",
@@ -77,6 +81,7 @@ const ChartControlObjects = ({
 		"Colors",
 		"Grid/Axes",
 		"Style",
+		"Sort",
 	];
 	const calendarOptionList: string[] = [
 		"Title",
@@ -87,13 +92,22 @@ const ChartControlObjects = ({
 		"Colors",
 		// "Format",
 		"Style",
+		"Sort",
 	];
-	const simpleCardOptionList: string[] = ["Title", "Colors", "Format", "Style"];
+	const simpleCardOptionList: string[] = [
+		"Title",
+		"Colors",
+		"Format",
+		"Style",
+		"Sort",
+		"Conditional Formatting",
+	];
 	const tableOptionList: string[] = [
 		"Title",
 		"Tooltip",
 		"Style",
 		"Format",
+		"Sort",
 		"Conditional Formatting",
 	];
 
@@ -254,7 +268,7 @@ const ChartControlObjects = ({
 							}
 							style={{
 								textAlign: "center",
-								gridColumn: i === 4 ? "1/span 3" : "auto",
+								gridColumn: i === 5 ? "1/span 3" : "auto",
 							}}
 							onClick={() => changeChartOption(propKey, option)}
 						>
@@ -299,7 +313,7 @@ const ChartControlObjects = ({
 					);
 				});
 			case "simplecard":
-				return simpleCardOptionList.map(option => {
+				return simpleCardOptionList.map((option: any, i: number) => {
 					return (
 						<div
 							key={option}
@@ -308,6 +322,10 @@ const ChartControlObjects = ({
 									? "optionImageSelected"
 									: "optionImage"
 							}
+							style={{
+								textAlign: "center",
+								gridColumn: i === 5 ? "1/span 3" : "auto",
+							}}
 							onClick={() => changeChartOption(propKey, option)}
 						>
 							{option}

@@ -2,7 +2,6 @@ import { connect } from "react-redux";
 import { Dispatch } from "redux";
 import ShortUniqueId from "short-unique-id";
 import { updatecfObjectOptions1 } from "../../../redux/ChartPoperties/ChartControlsActions";
-
 import "./tablechartCF.css";
 import { InputBase } from "@mui/material";
 import { Checkbox } from "@mui/material";
@@ -37,6 +36,8 @@ const GradientComponent = ({
 	format,
 	gradientMinMax,
 }: any) => {
+	format = JSON.parse(JSON.stringify(format));
+	//console.log(JSON.stringify(format.value.find((item:any)=>item.name == 'Min')))
 	var propKey = `${tabTileProps.selectedTabId}.${tabTileProps.selectedTileId}`;
 	var uId = new ShortUniqueId({ length: 8 });
 
@@ -110,7 +111,7 @@ const GradientComponent = ({
 			isBold: false,
 			isItalic: false,
 			isUnderlined: false,
-			backgroundColor: "white",
+			backgroundColor: "#FFB980",
 			fontColor: "black",
 		};
 

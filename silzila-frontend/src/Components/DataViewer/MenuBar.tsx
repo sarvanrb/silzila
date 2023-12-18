@@ -29,7 +29,7 @@ import AboutPopover from "../CommonFunctions/PopOverComponents/AboutPopover";
 import PrivacyPopover from "../CommonFunctions/PopOverComponents/PrivacyPopover";
 import { Dispatch } from "redux";
 import CSS from "csstype";
-import { MapStateProps, MenubarProps } from "./MenubarInterfaces";
+import { MenubarProps } from "./MenubarInterfaces";
 
 import FetchData from "../ServerCall/FetchData";
 import "./dataViewer.css";
@@ -186,8 +186,8 @@ const MenuBar = ({
 					}
 				}, 2000);
 
-				console.log(JSON.stringify(result.data.content["tabTileProps"], null, "\t"));
-				console.log(JSON.stringify(tabTileProps, null, "\t"));
+				//console.log(JSON.stringify(result.data.content["tabTileProps"], null, "\t"));
+				//console.log(JSON.stringify(tabTileProps, null, "\t"));
 			}
 		} else {
 			setSaveModal(true);
@@ -226,7 +226,7 @@ const MenuBar = ({
 			var result: any = await FetchData({
 				requestType: "withData",
 				method: "POST",
-				url: "playbook/",
+				url: "playbook",
 				data: playBookObj,
 				headers: { Authorization: `Bearer ${token}` },
 			});
@@ -526,7 +526,7 @@ const MenuBar = ({
 					<div
 						className="menuHomeIcon"
 						onClick={() => {
-							console.log(showSaveWarning, playBookState.playBookUid);
+							//console.log(showSaveWarning, playBookState.playBookUid);
 							if (showSaveWarning || playBookState.playBookUid === null) {
 								setSaveFromHomeIcon(true);
 								setSaveModal(true);

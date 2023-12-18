@@ -288,14 +288,22 @@ export const updateRichText = (propKey: string, value: string | number) => {
 	return { type: "UPDATE_RICH_TEXT", payload: { propKey, value } };
 };
 
-export const updateRichTextOnAddingDYnamicMeasure = (propKey: string, value: boolean, dmValue: string | number, style : any, dmId: string | number) => {
-	return { type: "UPDATE_RICH_TEXT_ON_ADDING_DYNAMIC_MEASURE", payload: { propKey, value, dmValue, style, dmId } };
+export const updateRichTextOnAddingDYnamicMeasure = (
+	propKey: string,
+	value: boolean,
+	dmValue: string | number,
+	style: any,
+	dmId: string | number
+) => {
+	return {
+		type: "UPDATE_RICH_TEXT_ON_ADDING_DYNAMIC_MEASURE",
+		payload: { propKey, value, dmValue, style, dmId },
+	};
 };
 
 export const updateCardControls = (propKey: string, option: string, value: any) => {
 	return { type: "UPDATE_CARD_CONTROLS", payload: { propKey, option, value } };
 };
-
 
 export const clearRichText = (propKey: string) => {
 	return { type: "CLEAR_RICH_TEXT", payload: { propKey } };
@@ -325,4 +333,29 @@ export const addTableLabel = (propKey: string, item: any) => {
 
 export const updatecfObjectOptions1 = (propKey: string, item: any) => {
 	return { type: "UPDATE_CF_OBJECT", payload: { propKey, item } };
+};
+
+export const addOrEditSimplecardConditionalFormat = (propKey: string, item: any) => {
+	return { type: "ADD_OR_EDIT_SIMPLECARD_CF", payload: { propKey, item } };
+};
+
+export const SortChartData= (propKey: string, chartData: string | any) => {
+	return {
+		type: "SORT_CHART_DATAS",
+		payload: { propKey, chartData },
+	};
+};
+
+export const SortOrder= (propKey: string, order: string) => {
+	return {
+		type: "SORT_ORDER",
+		payload: { propKey, order },
+	};
+};
+
+export const SortedValue= (propKey: string, value: string | any) => {
+	return {
+		type: "SORTED_VALUE",
+		payload: { propKey, value },
+	};
 };

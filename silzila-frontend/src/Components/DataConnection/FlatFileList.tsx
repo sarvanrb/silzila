@@ -17,6 +17,7 @@ import { Dispatch } from "redux";
 import { NotificationDialog } from "../CommonFunctions/DialogComponents";
 import { AlertColor } from "@mui/material/Alert";
 import { CloseRounded } from "@mui/icons-material";
+import "./DataSetup.css";
 
 const FlatFileList = (props: any) => {
 	const [fileList, setFileList] = useState<any>([]);
@@ -36,7 +37,7 @@ const FlatFileList = (props: any) => {
 		var result: any = await FetchData({
 			requestType: "noData",
 			method: "GET",
-			url: "file-data/",
+			url: "file-data",
 			headers: { Authorization: `Bearer ${props.token}` },
 		});
 
@@ -120,60 +121,60 @@ const FlatFileList = (props: any) => {
 				</div>
 			</div>
 			<div className="listContainer">
-				{fileList &&
-					fileList.map((fi: any) => {
-						return (
-							<SelectListItem
-								key={fi.name}
-								render={(xprops: any) => (
-									<div
-										key={fi.name}
-										className={
-											xprops.open
-												? "dataConnectionListSelected"
-												: "dataConnectionList"
-										}
-										onClick={() => onEditFlatFile(fi)}
-										onMouseOver={() => xprops.setOpen(true)}
-										onMouseLeave={() => xprops.setOpen(false)}
-									>
-										<div className="dataConnectionName">{fi.name}</div>
-										{xprops.open ? (
-											<Tooltip
-												title="Delete Flatfile"
-												arrow
-												placement="right-start"
-											>
-												<div
-													className="dataHomeDeleteIcon"
-													onClick={e => {
-														e.stopPropagation();
-														setDeleteItemId(fi.id);
-														setConfirmDialog(true);
-
-														// var yes = window.confirm(
-														// 	"Are you sure you want to Delete this File?"
-														// );
-														// if (yes) {
-														// 	deleteFlatFile(fi.id);
-														// }
-													}}
+				{fileList.length > 0 ? (
+					<>
+						{fileList.map((fi: any) => {
+							return (
+								<SelectListItem
+									key={fi.name}
+									render={(xprops: any) => (
+										<div
+											key={fi.name}
+											className={
+												xprops.open
+													? "dataConnectionListSelected"
+													: "dataConnectionList"
+											}
+											onClick={() => onEditFlatFile(fi)}
+											onMouseOver={() => xprops.setOpen(true)}
+											onMouseLeave={() => xprops.setOpen(false)}
+										>
+											<div className="dataConnectionName">{fi.name}</div>
+											{xprops.open ? (
+												<Tooltip
+													title="Delete Flatfile"
+													arrow
+													placement="right-start"
 												>
-													<DeleteIcon
-														style={{
-															width: "1rem",
-															height: "1rem",
-															margin: "auto",
+													<div
+														className="dataHomeDeleteIcon"
+														onClick={e => {
+															e.stopPropagation();
+															setDeleteItemId(fi.id);
+															setConfirmDialog(true);
 														}}
-													/>
-												</div>
-											</Tooltip>
-										) : null}
-									</div>
-								)}
-							/>
-						);
-					})}
+													>
+														<DeleteIcon
+															style={{
+																width: "1rem",
+																height: "1rem",
+																margin: "auto",
+															}}
+														/>
+													</div>
+												</Tooltip>
+											) : null}
+										</div>
+									)}
+								/>
+							);
+						})}
+					</>
+				) : (
+					<div className="listEmptyNote">
+						*No Flatfiles added yet, add Flatfiles to create Datasets*
+					</div>
+				)}
 			</div>
 			<Dialog open={confirmDialog}>
 				<div
